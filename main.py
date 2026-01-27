@@ -35,7 +35,7 @@ class SerialSignals(QObject):
 class VLCSimulator(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("NC Simulator v1.0")
+        self.setWindowTitle("NC Simulator v1.1")
         self.setMinimumSize(1000, 700)
 
         # Serial ports
@@ -52,6 +52,13 @@ class VLCSimulator(QMainWindow):
         self.last_wm_data = None
         self.last_ma_data = None
 
+        # Auto Test state
+        self.auto_test_running = False
+        self.auto_test_cycle = 0
+        self.auto_test_wm_count = 0
+        self.auto_test_wm_target = 20  # Send 20 WM data per cycle
+        self.auto_test_cycle_time = 60000  # 1 minute in ms
+
         # Signals for thread-safe updates
         self.signals = SerialSignals()
         self.signals.log_message.connect(self.append_log)
@@ -62,6 +69,12 @@ class VLCSimulator(QMainWindow):
         self.wm_timer.timeout.connect(self.send_wm_data)
         self.ma_timer = QTimer()
         self.ma_timer.timeout.connect(self.send_ma_data)
+
+        # Auto Test timers
+        self.auto_test_wm_timer = QTimer()
+        self.auto_test_wm_timer.timeout.connect(self.auto_test_send_wm)
+        self.auto_test_cycle_timer = QTimer()
+        self.auto_test_cycle_timer.timeout.connect(self.auto_test_new_cycle)
 
         self.init_ui()
         self.refresh_ports()
@@ -229,6 +242,31 @@ class VLCSimulator(QMainWindow):
         ctrl_group.setLayout(ctrl_layout)
         left_layout.addWidget(ctrl_group)
 
+        # Auto Test Section
+        auto_group = QGroupBox("Auto Test (1 MA + 20 WM per minute)")
+        auto_layout = QGridLayout()
+
+        self.auto_start_btn = QPushButton("START Auto Test")
+        self.auto_start_btn.clicked.connect(self.start_auto_test)
+        self.auto_start_btn.setStyleSheet("background-color: #00BCD4; color: white; font-weight: bold; padding: 10px;")
+        auto_layout.addWidget(self.auto_start_btn, 0, 0)
+
+        self.auto_stop_btn = QPushButton("STOP Auto Test")
+        self.auto_stop_btn.clicked.connect(self.stop_auto_test)
+        self.auto_stop_btn.setStyleSheet("background-color: #f44336; color: white; font-weight: bold; padding: 10px;")
+        self.auto_stop_btn.setEnabled(False)
+        auto_layout.addWidget(self.auto_stop_btn, 0, 1)
+
+        self.auto_status_label = QLabel("Status: Idle")
+        self.auto_status_label.setStyleSheet("font-weight: bold; color: #888;")
+        auto_layout.addWidget(self.auto_status_label, 1, 0, 1, 2)
+
+        self.auto_cycle_label = QLabel("Cycle: 0 | WM: 0/20 | MA: 0")
+        auto_layout.addWidget(self.auto_cycle_label, 2, 0, 1, 2)
+
+        auto_group.setLayout(auto_layout)
+        left_layout.addWidget(auto_group)
+
         left_layout.addStretch()
 
         # Right panel - Log
@@ -258,7 +296,7 @@ class VLCSimulator(QMainWindow):
         splitter.setSizes([400, 600])
         main_layout.addWidget(splitter)
 
-        self.append_log("=== NC Simulator v1.0 ===")
+        self.append_log("=== NC Simulator v1.1 ===")
         self.append_log("Connect USB-to-UART adapters to WM and MA ports")
         self.append_log("Then connect to Connector for testing")
         self.append_log("")
@@ -521,9 +559,122 @@ class VLCSimulator(QMainWindow):
         else:
             self.ma_tx_label.setText(f"TX Count: {count}")
 
+    # ==================== AUTO TEST FUNCTIONS ====================
+
+    def start_auto_test(self):
+        """Start the automated test cycle"""
+        self.auto_test_running = True
+        self.auto_test_cycle = 0
+        self.auto_test_wm_count = 0
+
+        # Update UI
+        self.auto_start_btn.setEnabled(False)
+        self.auto_stop_btn.setEnabled(True)
+        self.auto_status_label.setText("Status: Running")
+        self.auto_status_label.setStyleSheet("font-weight: bold; color: #00BCD4;")
+
+        self.append_log("=== AUTO TEST STARTED ===")
+        self.append_log("Cycle: 1 MA + 20 WM data, repeating every 1 minute")
+
+        # Start first cycle
+        self.auto_test_new_cycle()
+
+    def stop_auto_test(self):
+        """Stop the automated test"""
+        self.auto_test_running = False
+        self.auto_test_wm_timer.stop()
+        self.auto_test_cycle_timer.stop()
+
+        # Update UI
+        self.auto_start_btn.setEnabled(True)
+        self.auto_stop_btn.setEnabled(False)
+        self.auto_status_label.setText("Status: Stopped")
+        self.auto_status_label.setStyleSheet("font-weight: bold; color: #f44336;")
+
+        self.append_log("=== AUTO TEST STOPPED ===")
+        self.append_log(f"Total cycles completed: {self.auto_test_cycle}")
+
+    def auto_test_new_cycle(self):
+        """Start a new auto test cycle"""
+        if not self.auto_test_running:
+            return
+
+        self.auto_test_cycle += 1
+        self.auto_test_wm_count = 0
+
+        self.append_log(f"--- Cycle #{self.auto_test_cycle} Started ---")
+
+        # Step 1: Send 1 MA data
+        self.auto_test_send_ma()
+
+        # Step 2: Start sending WM data
+        self.auto_test_wm_timer.start(100)  # Send WM every 100ms
+
+        # Step 3: Schedule next cycle in 1 minute
+        self.auto_test_cycle_timer.start(self.auto_test_cycle_time)
+
+        self.update_auto_test_labels()
+
+    def auto_test_send_ma(self):
+        """Send single MA data for auto test"""
+        self.last_ma_data = self.get_ma_sample(code_0000=False)
+        self.ma_tx_count += 1
+        self.ma_tx_label.setText(f"TX Count: {self.ma_tx_count}")
+
+        if self.ma_serial and self.ma_serial.is_open:
+            try:
+                self.ma_serial.write(self.last_ma_data.encode())
+                self.append_log(f"[AUTO-MA #{self.ma_tx_count}] Sent")
+            except Exception as e:
+                self.append_log(f"[AUTO-MA #{self.ma_tx_count}] Error: {e}")
+        else:
+            self.append_log(f"[AUTO-MA #{self.ma_tx_count}] (No Port)")
+
+    def auto_test_send_wm(self):
+        """Send WM data for auto test"""
+        if not self.auto_test_running:
+            self.auto_test_wm_timer.stop()
+            return
+
+        # Check if we've sent 20 WM data
+        if self.auto_test_wm_count >= self.auto_test_wm_target:
+            self.auto_test_wm_timer.stop()
+            self.auto_status_label.setText(f"Status: Waiting for next cycle...")
+            self.append_log(f"[AUTO] WM complete (20/20), waiting for next cycle...")
+            return
+
+        self.auto_test_wm_count += 1
+        self.last_wm_data = self.get_wm_sample(code_0000=False)
+        self.wm_tx_count += 1
+        self.wm_tx_label.setText(f"TX Count: {self.wm_tx_count}")
+
+        if self.wm_serial and self.wm_serial.is_open:
+            try:
+                end_char = self.wm_end_combo.currentData()
+                data = self.last_wm_data + end_char
+                self.wm_serial.write(data.encode())
+                self.append_log(f"[AUTO-WM #{self.auto_test_wm_count}/20] {repr(self.last_wm_data)}")
+            except Exception as e:
+                self.append_log(f"[AUTO-WM #{self.auto_test_wm_count}/20] Error: {e}")
+        else:
+            self.append_log(f"[AUTO-WM #{self.auto_test_wm_count}/20] {repr(self.last_wm_data)} (No Port)")
+
+        self.update_auto_test_labels()
+
+    def update_auto_test_labels(self):
+        """Update auto test status labels"""
+        self.auto_cycle_label.setText(
+            f"Cycle: {self.auto_test_cycle} | WM: {self.auto_test_wm_count}/{self.auto_test_wm_target} | MA: {self.auto_test_cycle}"
+        )
+        if self.auto_test_wm_count < self.auto_test_wm_target:
+            self.auto_status_label.setText(f"Status: Sending WM ({self.auto_test_wm_count}/{self.auto_test_wm_target})")
+
     def closeEvent(self, event):
         """Clean up on close"""
         self.stop_both()
+        self.auto_test_running = False
+        self.auto_test_wm_timer.stop()
+        self.auto_test_cycle_timer.stop()
         if self.wm_serial and self.wm_serial.is_open:
             self.wm_serial.close()
         if self.ma_serial and self.ma_serial.is_open:
