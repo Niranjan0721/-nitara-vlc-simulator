@@ -355,8 +355,14 @@ class VLCSimulator(QMainWindow):
     def toggle_wm_connection(self):
         """Connect/disconnect WM serial port"""
         if self.wm_serial and self.wm_serial.is_open:
-            self.wm_serial.close()
+            try:
+                self.wm_serial.reset_input_buffer()
+                self.wm_serial.reset_output_buffer()
+                self.wm_serial.close()
+            except Exception:
+                pass
             self.wm_serial = None
+            time.sleep(0.5)
             self.wm_connect_btn.setText("Connect WM")
             self.wm_status_label.setText("Status: Disconnected")
             self.wm_status_label.setStyleSheet("color: red;")
@@ -373,14 +379,21 @@ class VLCSimulator(QMainWindow):
                 self.wm_status_label.setStyleSheet("color: green;")
                 self.append_log(f"[WM] Connected: {port} @ {baud} baud, Parity: {parity_name}")
             except Exception as e:
+                self.wm_serial = None
                 QMessageBox.critical(self, "Error", f"Failed to connect WM: {e}")
                 self.append_log(f"[WM] Connection error: {e}")
 
     def toggle_ma_connection(self):
         """Connect/disconnect MA serial port"""
         if self.ma_serial and self.ma_serial.is_open:
-            self.ma_serial.close()
+            try:
+                self.ma_serial.reset_input_buffer()
+                self.ma_serial.reset_output_buffer()
+                self.ma_serial.close()
+            except Exception:
+                pass
             self.ma_serial = None
+            time.sleep(0.5)
             self.ma_connect_btn.setText("Connect MA")
             self.ma_status_label.setText("Status: Disconnected")
             self.ma_status_label.setStyleSheet("color: red;")
@@ -397,6 +410,7 @@ class VLCSimulator(QMainWindow):
                 self.ma_status_label.setStyleSheet("color: green;")
                 self.append_log(f"[MA] Connected: {port} @ {baud} baud, Parity: {parity_name}")
             except Exception as e:
+                self.ma_serial = None
                 QMessageBox.critical(self, "Error", f"Failed to connect MA: {e}")
                 self.append_log(f"[MA] Connection error: {e}")
 
