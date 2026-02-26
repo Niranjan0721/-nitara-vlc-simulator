@@ -29,7 +29,8 @@ MA_MODELS = {
     3004: "Meko_with_paren (PARENTHESES)",
     4001: "Speedy_Newline (NEWLINE)",
     4002: "Standard_Newline (NEWLINE)",
-    4003: "Ultrasonic_Newline (NEWLINE)"
+    4003: "Ultrasonic_Newline (NEWLINE)",
+    5001: "STIPL (TIMEOUT)"
 }
 
 # MA Detection Modes
@@ -45,6 +46,8 @@ def get_ma_mode(model):
         return MA_MODE_PARENTHESES
     elif 4001 <= model <= 4003:
         return MA_MODE_NEWLINE
+    elif 5001 <= model <= 5001:
+        return MA_MODE_TIMEOUT
     return MA_MODE_TIMEOUT
 
 # WM Sample Data - Type 1 Kg
@@ -147,6 +150,19 @@ ma_4001_samples = [
     "#04.30 08.95 31.20 03.25 04.85 00.65 31.20 02.05 00.00 0 0007 00.00 000.0",
 ] + ["#04.00 08.80 30.00 03.00 04.70 00.64 30.50 01.90 00.00 0 0008 00.00 000.0"] * 26
 
+# MA Sample Data - 5001 STIPL (receipt format)
+ma_5001_samples = [
+    "M01225\nShri D.U.S.M.L.\n-----------------------\n26/02/26(M)\nCODE:  6  3  -MIX\nNAME: CUST 006\nQTY:  7.50 Lit.\nFAT:  6.3  %\nSNF:  8.4  %\nRATE  Rs. 47.41\nAMOUNT Rs.  355.58\n-----------------------",
+    "M01225\nShri D.U.S.M.L.\n-----------------------\n26/02/26(M)\nCODE:  8  1  -COW\nNAME: CUST 012\nQTY: 10.25 Lit.\nFAT:  4.1  %\nSNF:  8.7  %\nRATE  Rs. 45.10\nAMOUNT Rs.  462.28\n-----------------------",
+    "M01225\nShri D.U.S.M.L.\n-----------------------\n26/02/26(M)\nCODE: 12  5  -BUF\nNAME: CUST 003\nQTY: 12.50 Lit.\nFAT:  7.2  %\nSNF:  9.1  %\nRATE  Rs. 50.25\nAMOUNT Rs.  628.13\n-----------------------",
+    "M01225\nShri D.U.S.M.L.\n-----------------------\n26/02/26(E)\nCODE: 15  2  -MIX\nNAME: CUST 019\nQTY: 15.00 Lit.\nFAT:  5.8  %\nSNF:  8.2  %\nRATE  Rs. 46.75\nAMOUNT Rs.  701.25\n-----------------------",
+    "M01225\nShri D.U.S.M.L.\n-----------------------\n26/02/26(E)\nCODE:  3  7  -COW\nNAME: CUST 025\nQTY:  9.75 Lit.\nFAT:  4.5  %\nSNF:  8.6  %\nRATE  Rs. 44.90\nAMOUNT Rs.  437.78\n-----------------------",
+    "M01225\nShri D.U.S.M.L.\n-----------------------\n26/02/26(M)\nCODE: 20  4  -BUF\nNAME: CUST 008\nQTY: 11.50 Lit.\nFAT:  6.8  %\nSNF:  9.2  %\nRATE  Rs. 51.75\nAMOUNT Rs.  595.13\n-----------------------",
+    "M01225\nShri D.U.S.M.L.\n-----------------------\n26/02/26(M)\nCODE: 10  6  -MIX\nNAME: CUST 031\nQTY:  8.50 Lit.\nFAT:  3.8  %\nSNF:  8.5  %\nRATE  Rs. 43.60\nAMOUNT Rs.  370.60\n-----------------------",
+] + ["M01225\nShri D.U.S.M.L.\n-----------------------\n26/02/26(M)\nCODE:  5  9  -COW\nNAME: CUST 015\nQTY: 10.00 Lit.\nFAT:  5.0  %\nSNF:  8.5  %\nRATE  Rs. 45.00\nAMOUNT Rs.  450.00\n-----------------------"] * 26
+
+ma_code_0000_stipl = "M01225\nShri D.U.S.M.L.\n-----------------------\n26/02/26(M)\nCODE:  0  0  -MIX\nNAME: CUST 000\nQTY:  0.00 Lit.\nFAT:  0.0  %\nSNF:  0.0  %\nRATE  Rs.  0.00\nAMOUNT Rs.   0.00\n-----------------------"
+
 # MA code 0000 samples
 ma_code_0000_receipt = "Provisional Acknowldgement Slip\n\nDIARY CRAFT PVT LTD\n\nPEERNAGAR\n\nMCC Code: MCC_001\nVLCC Code: 00000215\nDate: 05/12/23          Time: 07:01\nCode: 0000\nName:\nMilk Type: Mix    Quantity: 0.00\nFAT:      0.00%   SNF:      0.0%\nRate (Rs.): 0.00\nAmount: 0.00\nCLR: 0.0\nShift: M    SSCounter: 0"
 ma_code_0000_paren = "(000000000000000000000000000000000000M)"
@@ -168,7 +184,8 @@ MA_SAMPLES = {
     3004: ma_3001_samples,
     4001: ma_4001_samples,
     4002: ma_4001_samples,
-    4003: ma_4001_samples
+    4003: ma_4001_samples,
+    5001: ma_5001_samples
 }
 
 MA_CODE_0000 = {
@@ -186,7 +203,8 @@ MA_CODE_0000 = {
     3004: ma_code_0000_paren,
     4001: ma_code_0000_newline,
     4002: ma_code_0000_newline,
-    4003: ma_code_0000_newline
+    4003: ma_code_0000_newline,
+    5001: ma_code_0000_stipl
 }
 
 # Baud rates
