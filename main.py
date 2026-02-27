@@ -35,7 +35,7 @@ class SerialSignals(QObject):
 class VLCSimulator(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("NC Simulator v1.1")
+        self.setWindowTitle("NC Simulator v1.2")
         self.setMinimumSize(1000, 700)
 
         # Serial ports
@@ -314,7 +314,7 @@ class VLCSimulator(QMainWindow):
         splitter.setSizes([400, 600])
         main_layout.addWidget(splitter)
 
-        self.append_log("=== NC Simulator v1.1 ===")
+        self.append_log("=== NC Simulator v1.2 ===")
         self.append_log("Connect USB-to-UART adapters to WM and MA ports")
         self.append_log("Then connect to Connector for testing")
         self.append_log("")
@@ -464,15 +464,10 @@ class VLCSimulator(QMainWindow):
 
         # Try to send via serial if connected
         if self.ma_serial and self.ma_serial.is_open:
-            try:
-                self.ma_serial.write(self.last_ma_data.encode())
-                self.append_log(f"[MA TX#{self.ma_tx_count}]")
-                self.append_log(f"{self.last_ma_data}")
-                self.append_log("")
-            except Exception as e:
-                self.append_log(f"[MA TX#{self.ma_tx_count}] (Serial Error: {e})")
-                self.append_log(f"{self.last_ma_data}")
-                self.append_log("")
+            self._send_ma_serial_throttled(self.last_ma_data)
+            self.append_log(f"[MA TX#{self.ma_tx_count}]")
+            self.append_log(f"{self.last_ma_data}")
+            self.append_log("")
         else:
             self.append_log(f"[MA TX#{self.ma_tx_count}] (No Port)")
             self.append_log(f"{self.last_ma_data}")
@@ -513,11 +508,8 @@ class VLCSimulator(QMainWindow):
             self.ma_tx_label.setText(f"TX Count: {self.ma_tx_count}")
 
             if self.ma_serial and self.ma_serial.is_open:
-                try:
-                    self.ma_serial.write(self.last_ma_data.encode())
-                    self.append_log(f"[MA TX#{self.ma_tx_count}] Single-shot:")
-                except Exception as e:
-                    self.append_log(f"[MA TX#{self.ma_tx_count}] Single-shot (Error: {e}):")
+                self._send_ma_serial_throttled(self.last_ma_data)
+                self.append_log(f"[MA TX#{self.ma_tx_count}] Single-shot:")
             else:
                 self.append_log(f"[MA TX#{self.ma_tx_count}] Single-shot (No Port):")
             self.append_log(f"{self.last_ma_data}")
@@ -541,11 +533,8 @@ class VLCSimulator(QMainWindow):
             self.ma_tx_label.setText(f"TX Count: {self.ma_tx_count}")
 
             if self.ma_serial and self.ma_serial.is_open:
-                try:
-                    self.ma_serial.write(self.last_ma_data.encode())
-                    self.append_log(f"[MA TX#{self.ma_tx_count}] Code 0000 single-shot:")
-                except Exception as e:
-                    self.append_log(f"[MA TX#{self.ma_tx_count}] Code 0000 single-shot (Error: {e}):")
+                self._send_ma_serial_throttled(self.last_ma_data)
+                self.append_log(f"[MA TX#{self.ma_tx_count}] Code 0000 single-shot:")
             else:
                 self.append_log(f"[MA TX#{self.ma_tx_count}] Code 0000 single-shot (No Port):")
             self.append_log(f"{self.last_ma_data}")
@@ -594,6 +583,26 @@ class VLCSimulator(QMainWindow):
             self.wm_tx_label.setText(f"TX Count: {count}")
         else:
             self.ma_tx_label.setText(f"TX Count: {count}")
+
+    def _send_ma_serial_throttled(self, data):
+        """Send MA data with CRLF line endings and throttled output.
+        Real MA devices (like Ekomilk) send data character by character
+        as the receipt prints. Sending in small chunks prevents USB-to-UART
+        adapter buffer overflow at low baud rates (e.g., 1200 baud)."""
+        def _send():
+            try:
+                # Convert \n to \r\n to match real device line endings
+                send_data = data.replace('\n', '\r\n').encode()
+                # Send in small chunks (16 bytes) with delay between chunks
+                # This prevents USB-to-UART adapter buffer overflow
+                for i in range(0, len(send_data), 16):
+                    if not (self.ma_serial and self.ma_serial.is_open):
+                        break
+                    self.ma_serial.write(send_data[i:i+16])
+                    time.sleep(0.05)
+            except Exception as e:
+                self.signals.log_message.emit(f"[MA] Send error: {e}")
+        threading.Thread(target=_send, daemon=True).start()
 
     # ==================== AUTO TEST FUNCTIONS ====================
 
@@ -658,11 +667,8 @@ class VLCSimulator(QMainWindow):
         self.ma_tx_label.setText(f"TX Count: {self.ma_tx_count}")
 
         if self.ma_serial and self.ma_serial.is_open:
-            try:
-                self.ma_serial.write(self.last_ma_data.encode())
-                self.append_log(f"[AUTO-MA #{self.ma_tx_count}] Sent")
-            except Exception as e:
-                self.append_log(f"[AUTO-MA #{self.ma_tx_count}] Error: {e}")
+            self._send_ma_serial_throttled(self.last_ma_data)
+            self.append_log(f"[AUTO-MA #{self.ma_tx_count}] Sent")
         else:
             self.append_log(f"[AUTO-MA #{self.ma_tx_count}] (No Port)")
 
