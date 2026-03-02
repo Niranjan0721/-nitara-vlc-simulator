@@ -1,14 +1,41 @@
-name: Build macOS App
+name: Build & Release (Windows + macOS)
 
 on:
   push:
     branches: [ main, master ]
-  workflow_dispatch:  # Allows manual trigger
+    tags:
+      - 'v*'
+  workflow_dispatch:
 
 jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install PyQt5 pyserial pyinstaller
+
+    - name: Build Windows EXE
+      run: |
+        pyinstaller --onefile --windowed --name "NC_Simulator" main.py
+
+    - name: Upload Windows EXE
+      uses: actions/upload-artifact@v4
+      with:
+        name: NC_Simulator-Windows
+        path: dist/NC_Simulator.exe
+
   build-macos:
     runs-on: macos-latest
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -33,14 +60,52 @@ jobs:
       run: |
         hdiutil create -volname "NC Simulator" -srcfolder dist/NC_Simulator.app -ov -format UDZO NC_Simulator.dmg
 
-    - name: Upload App Bundle
+    - name: Upload macOS DMG
+      uses: actions/upload-artifact@v4
+      with:
+        name: NC_Simulator-macOS-DMG
+        path: NC_Simulator.dmg
+
+    - name: Upload macOS App
       uses: actions/upload-artifact@v4
       with:
         name: NC_Simulator-macOS-App
         path: dist/NC_Simulator.app
 
-    - name: Upload DMG
-      uses: actions/upload-artifact@v4
+  release:
+    needs: [build-windows, build-macos]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+    - name: Download Windows artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: NC_Simulator-Windows
+        path: artifacts/windows
+
+    - name: Download macOS DMG artifact
+      uses: actions/download-artifact@v4
       with:
         name: NC_Simulator-macOS-DMG
-        path: NC_Simulator.dmg
+        path: artifacts/macos
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        name: NC Simulator ${{ github.ref_name }}
+        body: |
+          ## NC Simulator ${{ github.ref_name }}
+
+          ### Downloads
+          - **Windows**: `NC_Simulator.exe` - Run directly, no Python needed
+          - **macOS**: `NC_Simulator.dmg` - Mount and drag to Applications
+
+          ### Changes
+          - Fixed Pico2W data reception: WM data now sent byte-by-byte to match real device behavior
+          - Prevents USB-to-UART adapter buffering issues with Pico2W IRQ handler
+          - Works with both ESP32-S3 and Pico2W connector boards
+        files: |
+          artifacts/windows/NC_Simulator.exe
+          artifacts/macos/NC_Simulator.dmg

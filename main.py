@@ -35,7 +35,7 @@ class SerialSignals(QObject):
 class VLCSimulator(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("NC Simulator v1.2")
+        self.setWindowTitle("NC Simulator v1.3")
         self.setMinimumSize(1000, 700)
 
         # Serial ports
@@ -314,7 +314,7 @@ class VLCSimulator(QMainWindow):
         splitter.setSizes([400, 600])
         main_layout.addWidget(splitter)
 
-        self.append_log("=== NC Simulator v1.2 ===")
+        self.append_log("=== NC Simulator v1.3 ===")
         self.append_log("Connect USB-to-UART adapters to WM and MA ports")
         self.append_log("Then connect to Connector for testing")
         self.append_log("")
@@ -435,7 +435,10 @@ class VLCSimulator(QMainWindow):
             return samples[self.ma_sample_index]
 
     def send_wm_data(self):
-        """Send WM data via serial"""
+        """Send WM data via serial - byte-by-byte to match real WM device behavior.
+        Pico2W connector uses IRQ-based char-by-char reception and only detects
+        '\\n' as packet end. Sending byte-by-byte prevents USB-to-UART adapter
+        buffering issues that cause Pico2W to miss data."""
         if not self.wm_continuous:
             return
 
@@ -444,13 +447,8 @@ class VLCSimulator(QMainWindow):
 
         # Try to send via serial if connected
         if self.wm_serial and self.wm_serial.is_open:
-            try:
-                end_char = self.wm_end_combo.currentData()
-                data = self.last_wm_data + end_char
-                self.wm_serial.write(data.encode())
-                self.append_log(f"[WM TX#{self.wm_tx_count}] {repr(self.last_wm_data)}")
-            except Exception as e:
-                self.append_log(f"[WM TX#{self.wm_tx_count}] {repr(self.last_wm_data)} (Serial Error: {e})")
+            self._send_wm_serial_throttled(self.last_wm_data)
+            self.append_log(f"[WM TX#{self.wm_tx_count}] {repr(self.last_wm_data)}")
         else:
             self.append_log(f"[WM TX#{self.wm_tx_count}] {repr(self.last_wm_data)} (No Port)")
 
@@ -584,6 +582,27 @@ class VLCSimulator(QMainWindow):
         else:
             self.ma_tx_label.setText(f"TX Count: {count}")
 
+    def _send_wm_serial_throttled(self, data):
+        """Send WM data byte-by-byte to match real weighing machine behavior.
+        Real WM devices output data character by character via RS232/TTL.
+        The Pico2W connector uses IRQ-based single-char reception and detects
+        '\\n' as packet boundary. Sending byte-by-byte with small delays
+        ensures the Pico2W IRQ handler processes each character correctly
+        and avoids USB-to-UART adapter buffering issues."""
+        def _send():
+            try:
+                end_char = self.wm_end_combo.currentData()
+                send_data = (data + end_char).encode()
+                # Send byte-by-byte with 1ms delay to match real WM device timing
+                for byte in send_data:
+                    if not (self.wm_serial and self.wm_serial.is_open):
+                        break
+                    self.wm_serial.write(bytes([byte]))
+                    time.sleep(0.001)  # 1ms between chars, like real WM device
+            except Exception as e:
+                self.signals.log_message.emit(f"[WM] Send error: {e}")
+        threading.Thread(target=_send, daemon=True).start()
+
     def _send_ma_serial_throttled(self, data):
         """Send MA data with CRLF line endings and throttled output.
         Real MA devices (like Ekomilk) send data character by character
@@ -691,13 +710,8 @@ class VLCSimulator(QMainWindow):
         self.wm_tx_label.setText(f"TX Count: {self.wm_tx_count}")
 
         if self.wm_serial and self.wm_serial.is_open:
-            try:
-                end_char = self.wm_end_combo.currentData()
-                data = self.last_wm_data + end_char
-                self.wm_serial.write(data.encode())
-                self.append_log(f"[AUTO-WM #{self.auto_test_wm_count}/20] {repr(self.last_wm_data)}")
-            except Exception as e:
-                self.append_log(f"[AUTO-WM #{self.auto_test_wm_count}/20] Error: {e}")
+            self._send_wm_serial_throttled(self.last_wm_data)
+            self.append_log(f"[AUTO-WM #{self.auto_test_wm_count}/20] {repr(self.last_wm_data)}")
         else:
             self.append_log(f"[AUTO-WM #{self.auto_test_wm_count}/20] {repr(self.last_wm_data)} (No Port)")
 
