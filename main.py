@@ -35,7 +35,7 @@ class SerialSignals(QObject):
 class VLCSimulator(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("NC Simulator v1.3")
+        self.setWindowTitle("NC Simulator v1.4")
         self.setMinimumSize(1000, 700)
 
         # Serial ports
@@ -136,8 +136,8 @@ class VLCSimulator(QMainWindow):
         wm_layout.addWidget(QLabel("End Char:"), 3, 0)
         self.wm_end_combo = QComboBox()
         self.wm_end_combo.addItem("\\n (Newline)", "\n")
-        self.wm_end_combo.addItem("\\r (CR)", "\r")
         self.wm_end_combo.addItem("\\r\\n (CRLF)", "\r\n")
+        self.wm_end_combo.addItem("\\r (CR)", "\r")
         self.wm_end_combo.addItem("None", "")
         wm_layout.addWidget(self.wm_end_combo, 3, 1)
 
@@ -314,7 +314,7 @@ class VLCSimulator(QMainWindow):
         splitter.setSizes([400, 600])
         main_layout.addWidget(splitter)
 
-        self.append_log("=== NC Simulator v1.3 ===")
+        self.append_log("=== NC Simulator v1.4 ===")
         self.append_log("Connect USB-to-UART adapters to WM and MA ports")
         self.append_log("Then connect to Connector for testing")
         self.append_log("")
@@ -415,14 +415,41 @@ class VLCSimulator(QMainWindow):
                 self.append_log(f"[MA] Connection error: {e}")
 
     def get_wm_sample(self, code_0000=False):
-        """Get WM sample data"""
+        """Get WM sample data
+        Simulate real weighing machine behavior by sending slightly
+        varying values before settling on a stable value (duplicate)
+        to trigger the ESP32-S3's single-read duplicate detection."""
         model = self.wm_model_combo.currentData()
+
+        # Counter for varying weight logic
+        if not hasattr(self, 'wm_stability_counter'):
+            self.wm_stability_counter = 0
+
+        self.wm_stability_counter += 1
+
         if code_0000:
-            return WM_CODE_0000.get(model, "+0000.00Kg")
+            base_sample = WM_CODE_0000.get(model, "+0000.00Kg")
+            # For 0000 code, we don't index through an array, just cycle the counter
+            if self.wm_stability_counter > 4:
+                self.wm_stability_counter = 1
         else:
             samples = WM_SAMPLES.get(model, WM_SAMPLES[9001])
-            self.wm_sample_index = (self.wm_sample_index + 1) % len(samples)
-            return samples[self.wm_sample_index]
+            # For normal mode, advance through the samples array every 4th transmission
+            if self.wm_stability_counter > 4:
+                self.wm_sample_index = (self.wm_sample_index + 1) % len(samples)
+                self.wm_stability_counter = 1
+            base_sample = samples[self.wm_sample_index]
+
+        # Apply simulated wobble padding
+        if self.wm_stability_counter == 1:
+            # 1st try: slightly lighter
+            return base_sample.replace(".", ".0") if "." in base_sample else base_sample + " "
+        elif self.wm_stability_counter == 2:
+            # 2nd try: slightly heavier
+            return base_sample.replace(".", ".2") if "." in base_sample else base_sample + "  "
+        else:
+            # 3rd & 4th try: stable value (duplicate triggers firmware)
+            return base_sample
 
     def get_ma_sample(self, code_0000=False):
         """Get MA sample data"""
@@ -475,7 +502,7 @@ class VLCSimulator(QMainWindow):
         """Start WM continuous transmission with normal data"""
         self.last_wm_data = self.get_wm_sample(code_0000=False)
         self.wm_continuous = True
-        self.wm_timer.start(100)  # Match Pico VLC timing (~10 Hz)
+        self.wm_timer.start(250)  # 4 Hz - gives Pico2W time to process between packets
         connected = "(Connected)" if self.wm_serial and self.wm_serial.is_open else "(No Port)"
         self.append_log(f"[WM] Started continuous: {self.last_wm_data} {connected}")
 
@@ -604,24 +631,20 @@ class VLCSimulator(QMainWindow):
         threading.Thread(target=_send, daemon=True).start()
 
     def _send_ma_serial_throttled(self, data):
-        """Send MA data with CRLF line endings and throttled output.
-        Real MA devices (like Ekomilk) send data character by character
-        as the receipt prints. Sending in small chunks prevents USB-to-UART
-        adapter buffer overflow at low baud rates (e.g., 1200 baud)."""
+        """Send MA data byte-by-byte to match real milk analyzer behavior."""
         def _send():
             try:
-                # Convert \n to \r\n to match real device line endings
-                send_data = data.replace('\n', '\r\n').encode()
-                # Send in small chunks (16 bytes) with delay between chunks
-                # This prevents USB-to-UART adapter buffer overflow
-                for i in range(0, len(send_data), 16):
+                send_data = data.encode()
+                # Send byte-by-byte like real MA device
+                for byte in send_data:
                     if not (self.ma_serial and self.ma_serial.is_open):
                         break
-                    self.ma_serial.write(send_data[i:i+16])
-                    time.sleep(0.05)
+                    self.ma_serial.write(bytes([byte]))
+                    time.sleep(0.001)  # 1ms between bytes
             except Exception as e:
                 self.signals.log_message.emit(f"[MA] Send error: {e}")
         threading.Thread(target=_send, daemon=True).start()
+
 
     # ==================== AUTO TEST FUNCTIONS ====================
 
