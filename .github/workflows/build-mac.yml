@@ -1,0 +1,31 @@
+name: Build Mac App
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install PyQt5 pyserial pyinstaller
+
+      - name: Build Mac app
+        run: |
+          python -m PyInstaller --onefile --windowed --name NC_Simulator main.py
+
+      - name: Upload Mac app
+        uses: actions/upload-artifact@v4
+        with:
+          name: NC_Simulator-Mac
+          path: dist/NC_Simulator.app
