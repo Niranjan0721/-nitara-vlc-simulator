@@ -24,8 +24,14 @@ jobs:
         run: |
           python -m PyInstaller --onefile --windowed --name NC_Simulator main.py
 
-      - name: Upload Mac app
+      - name: Create DMG
+        run: |
+          mkdir -p dmg_contents
+          cp -r dist/NC_Simulator.app dmg_contents/
+          hdiutil create -volname "NC_Simulator" -srcfolder dmg_contents -ov -format UDZO NC_Simulator.dmg
+
+      - name: Upload DMG
         uses: actions/upload-artifact@v4
         with:
-          name: NC_Simulator-Mac
-          path: dist/NC_Simulator.app
+          name: NC_Simulator-Mac-DMG
+          path: NC_Simulator.dmg
