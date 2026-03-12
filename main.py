@@ -21,8 +21,9 @@ import serial.tools.list_ports
 
 from sample_data import (
     WM_MODELS, MA_MODELS, WM_SAMPLES, MA_SAMPLES,
-    WM_CODE_0000, MA_CODE_0000, BAUD_RATES, get_ma_mode,
-    MA_MODE_TIMEOUT, MA_MODE_PARENTHESES, MA_MODE_NEWLINE
+    WM_CODE_0000, BAUD_RATES, get_ma_mode,
+    MA_MODE_TIMEOUT, MA_MODE_PARENTHESES, MA_MODE_NEWLINE,
+    generate_ma_code_0000
 )
 
 
@@ -35,7 +36,7 @@ class SerialSignals(QObject):
 class VLCSimulator(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("NC Simulator v1.4")
+        self.setWindowTitle("NC Simulator v1.5")
         self.setMinimumSize(1000, 700)
 
         # Serial ports
@@ -234,10 +235,15 @@ class VLCSimulator(QMainWindow):
         ma_0000_btn.setStyleSheet("background-color: #2196F3; color: white;")
         ctrl_layout.addWidget(ma_0000_btn, 1, 2)
 
+        ma_resend_btn = QPushButton("Resend")
+        ma_resend_btn.clicked.connect(self.resend_ma)
+        ma_resend_btn.setStyleSheet("background-color: #FF9800; color: white;")
+        ctrl_layout.addWidget(ma_resend_btn, 1, 3)
+
         ma_stop_btn = QPushButton("Stop")
         ma_stop_btn.clicked.connect(self.stop_ma)
         ma_stop_btn.setStyleSheet("background-color: #f44336; color: white;")
-        ctrl_layout.addWidget(ma_stop_btn, 1, 3)
+        ctrl_layout.addWidget(ma_stop_btn, 1, 4)
 
         # BOTH Controls (like Pico2W buttons)
         ctrl_layout.addWidget(QLabel("BOTH:"), 2, 0)
@@ -314,7 +320,7 @@ class VLCSimulator(QMainWindow):
         splitter.setSizes([400, 600])
         main_layout.addWidget(splitter)
 
-        self.append_log("=== NC Simulator v1.4 ===")
+        self.append_log("=== NC Simulator v1.5 ===")
         self.append_log("Connect USB-to-UART adapters to WM and MA ports")
         self.append_log("Then connect to Connector for testing")
         self.append_log("")
@@ -455,7 +461,7 @@ class VLCSimulator(QMainWindow):
         """Get MA sample data"""
         model = self.ma_model_combo.currentData()
         if code_0000:
-            return MA_CODE_0000.get(model, MA_CODE_0000[1001])
+            return generate_ma_code_0000(model)
         else:
             samples = MA_SAMPLES.get(model, MA_SAMPLES[1001])
             self.ma_sample_index = (self.ma_sample_index + 1) % len(samples)
@@ -575,6 +581,23 @@ class VLCSimulator(QMainWindow):
         self.ma_continuous = False
         self.ma_timer.stop()
         self.append_log("[MA] Stopped")
+
+    def resend_ma(self):
+        """Resend the previous MA data (duplicate)"""
+        if not self.last_ma_data:
+            self.append_log("[MA] No previous data to resend")
+            return
+
+        self.ma_tx_count += 1
+        self.ma_tx_label.setText(f"TX Count: {self.ma_tx_count}")
+
+        if self.ma_serial and self.ma_serial.is_open:
+            self._send_ma_serial_throttled(self.last_ma_data)
+            self.append_log(f"[MA TX#{self.ma_tx_count}] RESEND (duplicate):")
+        else:
+            self.append_log(f"[MA TX#{self.ma_tx_count}] RESEND (No Port):")
+        self.append_log(f"{self.last_ma_data}")
+        self.append_log("")
 
     def start_both_normal(self):
         """Start both WM and MA with normal data (like Pico2W BUTTON_A)"""

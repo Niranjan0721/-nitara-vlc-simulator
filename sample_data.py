@@ -1,6 +1,8 @@
 # Sample data for VLC Simulator Windows GUI
 # Same data as ESP32-S3 simulator
 
+import random
+
 SAMPLE_DATA_COUNT = 33
 
 # WM Models
@@ -150,23 +152,62 @@ ma_4001_samples = [
     "#04.30 08.95 31.20 03.25 04.85 00.65 31.20 02.05 00.00 0 0007 00.00 000.0",
 ] + ["#04.00 08.80 30.00 03.00 04.70 00.64 30.50 01.90 00.00 0 0008 00.00 000.0"] * 26
 
-# MA Sample Data - 5001 STIPL (receipt format)
+# MA Sample Data - 5001 STIPL (receipt format matching real STIPL device)
+def _fmt_stipl(code1, code2, mtype, name, qty, fat, snf, rate, shift, time_str):
+    """Format STIPL receipt matching real milk analyzer output"""
+    amount = qty * rate
+    return (
+        f"FIRM : KHATAL\n"
+        f"1000209\n"
+        f"NAYA GAUN\n"
+        f"--------------\n"
+        f"05/03/26({shift}) {time_str} !\n"
+        f"CODE: {code1:2d} {code2:2d} -{mtype}\n"
+        f"NAME: {name}\n"
+        f"QTY : {qty:.2f} Lit.\n"
+        f"FAT : {fat:.1f}  % *\n"
+        f"SNF : {snf:.1f}  % *\n"
+        f"RATE Rs. {rate:.2f}\n"
+        f"AMOUNT Rs. {amount:.2f}\n"
+        f"THANK YOU\n"
+        f"--------------"
+    )
+
 ma_5001_samples = [
-    "M01225\nShri D.U.S.M.L.\n-----------------------\n26/02/26(M)\nCODE:  6  3  -MIX\nNAME: CUST 006\nQTY:  7.50 Lit.\nFAT:  6.3  %\nSNF:  8.4  %\nRATE  Rs. 47.41\nAMOUNT Rs.  355.58\n-----------------------",
-    "M01225\nShri D.U.S.M.L.\n-----------------------\n26/02/26(M)\nCODE:  8  1  -COW\nNAME: CUST 012\nQTY: 10.25 Lit.\nFAT:  4.1  %\nSNF:  8.7  %\nRATE  Rs. 45.10\nAMOUNT Rs.  462.28\n-----------------------",
-    "M01225\nShri D.U.S.M.L.\n-----------------------\n26/02/26(M)\nCODE: 12  5  -BUF\nNAME: CUST 003\nQTY: 12.50 Lit.\nFAT:  7.2  %\nSNF:  9.1  %\nRATE  Rs. 50.25\nAMOUNT Rs.  628.13\n-----------------------",
-    "M01225\nShri D.U.S.M.L.\n-----------------------\n26/02/26(E)\nCODE: 15  2  -MIX\nNAME: CUST 019\nQTY: 15.00 Lit.\nFAT:  5.8  %\nSNF:  8.2  %\nRATE  Rs. 46.75\nAMOUNT Rs.  701.25\n-----------------------",
-    "M01225\nShri D.U.S.M.L.\n-----------------------\n26/02/26(E)\nCODE:  3  7  -COW\nNAME: CUST 025\nQTY:  9.75 Lit.\nFAT:  4.5  %\nSNF:  8.6  %\nRATE  Rs. 44.90\nAMOUNT Rs.  437.78\n-----------------------",
-    "M01225\nShri D.U.S.M.L.\n-----------------------\n26/02/26(M)\nCODE: 20  4  -BUF\nNAME: CUST 008\nQTY: 11.50 Lit.\nFAT:  6.8  %\nSNF:  9.2  %\nRATE  Rs. 51.75\nAMOUNT Rs.  595.13\n-----------------------",
-    "M01225\nShri D.U.S.M.L.\n-----------------------\n26/02/26(M)\nCODE: 10  6  -MIX\nNAME: CUST 031\nQTY:  8.50 Lit.\nFAT:  3.8  %\nSNF:  8.5  %\nRATE  Rs. 43.60\nAMOUNT Rs.  370.60\n-----------------------",
-] + ["M01225\nShri D.U.S.M.L.\n-----------------------\n26/02/26(M)\nCODE:  5  9  -COW\nNAME: CUST 015\nQTY: 10.00 Lit.\nFAT:  5.0  %\nSNF:  8.5  %\nRATE  Rs. 45.00\nAMOUNT Rs.  450.00\n-----------------------"] * 26
-
-ma_code_0000_stipl = "M01225\nShri D.U.S.M.L.\n-----------------------\n26/02/26(M)\nCODE:  0  0  -MIX\nNAME: CUST 000\nQTY:  0.00 Lit.\nFAT:  0.0  %\nSNF:  0.0  %\nRATE  Rs.  0.00\nAMOUNT Rs.   0.00\n-----------------------"
-
-# MA code 0000 samples
-ma_code_0000_receipt = "Provisional Acknowldgement Slip\n\nDIARY CRAFT PVT LTD\n\nPEERNAGAR\n\nMCC Code: MCC_001\nVLCC Code: 00000215\nDate: 05/12/23          Time: 07:01\nCode: 0000\nName:\nMilk Type: Mix    Quantity: 0.00\nFAT:      0.00%   SNF:      0.0%\nRate (Rs.): 0.00\nAmount: 0.00\nCLR: 0.0\nShift: M    SSCounter: 0"
-ma_code_0000_paren = "(000000000000000000000000000000000000M)"
-ma_code_0000_newline = "#00.00 00.00 00.00 00.00 00.00 00.00 00.00 00.00 00.00 0 0000 00.00 000.0"
+    _fmt_stipl(23, 22, "MIX", "", 1.78, 6.5, 9.0, 57.41, "E", "14:47"),
+    _fmt_stipl(15, 8, "COW", "RAJESH", 10.25, 4.1, 8.7, 45.10, "M", "07:15"),
+    _fmt_stipl(12, 5, "BUF", "SUNIL", 12.50, 7.2, 9.1, 50.25, "M", "07:30"),
+    _fmt_stipl(18, 14, "MIX", "MAHESH", 15.00, 5.8, 8.2, 46.75, "E", "15:00"),
+    _fmt_stipl(3, 27, "COW", "", 9.75, 4.5, 8.6, 44.90, "M", "08:10"),
+    _fmt_stipl(20, 4, "BUF", "GANESH", 11.50, 6.8, 9.2, 51.75, "M", "08:25"),
+    _fmt_stipl(10, 16, "MIX", "RAMESH", 8.50, 3.8, 8.5, 43.60, "E", "16:00"),
+    _fmt_stipl(7, 19, "COW", "DINESH", 5.25, 4.3, 8.8, 44.50, "M", "06:45"),
+    _fmt_stipl(25, 11, "BUF", "", 14.00, 7.5, 9.3, 52.00, "E", "15:30"),
+    _fmt_stipl(1, 30, "MIX", "PRAKASH", 6.75, 5.2, 8.4, 46.00, "M", "07:00"),
+    _fmt_stipl(28, 6, "COW", "VINOD", 11.00, 3.9, 8.6, 43.80, "M", "07:45"),
+    _fmt_stipl(14, 21, "BUF", "ANIL", 13.25, 6.5, 9.0, 50.50, "E", "14:30"),
+    _fmt_stipl(9, 3, "MIX", "", 7.00, 5.5, 8.3, 47.00, "M", "08:00"),
+    _fmt_stipl(22, 17, "COW", "SANJAY", 8.75, 4.0, 8.7, 44.20, "E", "16:15"),
+    _fmt_stipl(6, 28, "BUF", "MOHAN", 16.50, 7.0, 9.1, 51.25, "M", "06:30"),
+    _fmt_stipl(30, 2, "MIX", "KISHAN", 4.50, 5.0, 8.5, 45.50, "M", "07:20"),
+    _fmt_stipl(11, 24, "COW", "", 9.00, 4.2, 8.8, 44.75, "E", "15:45"),
+    _fmt_stipl(16, 9, "BUF", "GOPAL", 12.00, 6.9, 9.2, 51.00, "M", "08:30"),
+    _fmt_stipl(4, 13, "MIX", "RAVI", 7.25, 5.3, 8.4, 46.25, "E", "14:00"),
+    _fmt_stipl(27, 20, "COW", "ASHOK", 10.50, 4.4, 8.9, 45.00, "M", "07:10"),
+    _fmt_stipl(19, 7, "BUF", "", 13.75, 7.3, 9.0, 50.75, "M", "06:50"),
+    _fmt_stipl(2, 26, "MIX", "VIJAY", 6.00, 5.7, 8.3, 47.50, "E", "16:30"),
+    _fmt_stipl(21, 15, "COW", "DEEPAK", 8.25, 3.7, 8.6, 43.40, "M", "08:15"),
+    _fmt_stipl(8, 1, "BUF", "NARESH", 14.50, 6.6, 9.1, 50.00, "E", "15:15"),
+    _fmt_stipl(26, 10, "MIX", "", 5.75, 5.1, 8.5, 45.75, "M", "07:35"),
+    _fmt_stipl(13, 29, "COW", "SURESH", 9.50, 4.6, 8.7, 45.25, "M", "06:40"),
+    _fmt_stipl(17, 23, "BUF", "KAMAL", 11.75, 7.1, 9.3, 52.25, "E", "14:15"),
+    _fmt_stipl(5, 18, "MIX", "PAVAN", 7.50, 5.4, 8.4, 46.50, "M", "08:05"),
+    _fmt_stipl(29, 12, "COW", "", 10.00, 4.0, 8.8, 44.00, "E", "15:50"),
+    _fmt_stipl(24, 8, "BUF", "HARISH", 15.25, 6.7, 9.2, 51.50, "M", "07:25"),
+    _fmt_stipl(10, 25, "MIX", "LOKESH", 6.50, 5.6, 8.3, 47.25, "M", "06:55"),
+    _fmt_stipl(20, 14, "COW", "GIRISH", 9.25, 4.3, 8.9, 44.60, "E", "16:05"),
+    _fmt_stipl(15, 7, "BUF", "", 13.00, 7.4, 9.0, 50.50, "M", "08:20"),
+]
 
 # All MA samples by model
 MA_SAMPLES = {
@@ -188,24 +229,68 @@ MA_SAMPLES = {
     5001: ma_5001_samples
 }
 
-MA_CODE_0000 = {
-    1001: ma_code_0000_receipt,
-    1002: ma_code_0000_receipt,
-    1003: ma_code_0000_receipt,
-    1004: ma_code_0000_receipt,
-    2001: ma_code_0000_receipt,
-    2002: ma_code_0000_receipt,
-    2003: ma_code_0000_receipt,
-    2004: ma_code_0000_receipt,
-    3001: ma_code_0000_paren,
-    3002: ma_code_0000_paren,
-    3003: ma_code_0000_paren,
-    3004: ma_code_0000_paren,
-    4001: ma_code_0000_newline,
-    4002: ma_code_0000_newline,
-    4003: ma_code_0000_newline,
-    5001: ma_code_0000_stipl
-}
+
+def generate_ma_code_0000(model):
+    """Generate MA code 0000 data with random values for all fields except code.
+    Code is always 0000, but fat/snf/rate/amt/qty have realistic random values."""
+    milk_types_receipt = ["Mix", "Cow", "Buffalo"]
+    milk_types_stipl = ["MIX", "COW", "BUF"]
+    shifts = ["M", "E"]
+
+    qty = round(random.uniform(1.5, 18.0), 2)
+    fat = round(random.uniform(3.5, 7.5), 2)
+    snf = round(random.uniform(8.0, 9.5), 1)
+    rate = round(random.uniform(40.0, 55.0), 2)
+    amt = round(qty * rate, 2)
+    clr = round(random.uniform(25.0, 35.0), 1)
+    shift = random.choice(shifts)
+    counter = random.randint(1, 10)
+
+    # Receipt format (models 1001-2004)
+    if 1001 <= model <= 2004:
+        mt = random.choice(milk_types_receipt)
+        return (
+            f"Provisional Acknowldgement Slip\n\n"
+            f"DIARY CRAFT PVT LTD\n\n"
+            f"PEERNAGAR\n\n"
+            f"MCC Code: MCC_001\n"
+            f"VLCC Code: 00000215\n"
+            f"Date: 05/12/23          Time: 07:01\n"
+            f"Code: 0000\n"
+            f"Name:\n"
+            f"Milk Type: {mt}    Quantity: {qty:.2f}\n"
+            f"FAT:      {fat:.2f}%   SNF:      {snf:.1f}%\n"
+            f"Rate (Rs.): {rate:.2f}\n"
+            f"Amount: {amt:.2f}\n"
+            f"CLR: {clr:.1f}\n"
+            f"Shift: {shift}    SSCounter: {counter}"
+        )
+
+    # Parentheses format (models 3001-3004)
+    elif 3001 <= model <= 3004:
+        # Format: (FFFSSSRRR...) - randomize values but code portion = 0000
+        f_int = int(fat * 100)
+        s_int = int(snf * 100)
+        q_int = int(qty * 100)
+        r_int = int(rate * 100)
+        a_int = int(amt)
+        return f"({f_int:04d}{s_int:04d}{r_int:04d}{q_int:04d}{clr*10:04.0f}{a_int:05d}0000{counter:03d}{shift})"
+
+    # Newline format (models 4001-4003)
+    elif 4001 <= model <= 4003:
+        fat1 = round(random.uniform(3.0, 5.0), 2)
+        snf1 = round(random.uniform(8.5, 9.5), 2)
+        clr1 = round(random.uniform(28.0, 33.0), 2)
+        return f"#{fat1:05.2f} {snf1:05.2f} {clr1:05.2f} {random.uniform(2.5, 4.0):05.2f} {random.uniform(4.0, 5.5):05.2f} {random.uniform(0.5, 0.8):05.2f} {random.uniform(29.0, 32.0):05.2f} {random.uniform(1.5, 2.5):05.2f} 00.00 0 0000 00.00 000.0"
+
+    # STIPL format (model 5001)
+    elif model == 5001:
+        mt = random.choice(milk_types_stipl)
+        time_str = f"{random.randint(6, 17):02d}:{random.randint(0, 59):02d}"
+        return _fmt_stipl(0, 0, mt, "", qty, round(fat, 1), snf, rate, shift, time_str)
+
+    # Fallback
+    return generate_ma_code_0000(1001)
 
 # Baud rates
 BAUD_RATES = [1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200]
