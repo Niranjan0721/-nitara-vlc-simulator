@@ -36,7 +36,7 @@ class SerialSignals(QObject):
 class VLCSimulator(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("NC Simulator v1.6")
+        self.setWindowTitle("NC Simulator v1.7")
         self.setMinimumSize(1000, 700)
 
         # Serial ports
@@ -320,7 +320,7 @@ class VLCSimulator(QMainWindow):
         splitter.setSizes([400, 600])
         main_layout.addWidget(splitter)
 
-        self.append_log("=== NC Simulator v1.6 ===")
+        self.append_log("=== NC Simulator v1.7 ===")
         self.append_log("Connect USB-to-UART adapters to WM and MA ports")
         self.append_log("Then connect to Connector for testing")
         self.append_log("")
