@@ -25,6 +25,7 @@ MA_MODELS = {
     2002: "REIL Electronic (TIMEOUT)",
     2003: "Lactosure (TIMEOUT)",
     2004: "Essae (TIMEOUT)",
+    2005: "Lactoscan (TIMEOUT)",
     3001: "Speedy_with_paren (PARENTHESES)",
     3002: "Standard_with_paren (PARENTHESES)",
     3003: "IndiZ (PARENTHESES)",
@@ -42,7 +43,7 @@ MA_MODE_NEWLINE = "NEWLINE"
 
 def get_ma_mode(model):
     """Get MA detection mode based on model number"""
-    if 1001 <= model <= 2004:
+    if 1001 <= model <= 2005:
         return MA_MODE_TIMEOUT
     elif 3001 <= model <= 3004:
         return MA_MODE_PARENTHESES
@@ -320,6 +321,20 @@ ma_2004_samples = [
     _fmt_2004(5.60, 8.30, 25.40, 3.02, 0.66, 4.52, 29.50, 0.00, -0.570, 2, "23098128", 495.0),
 ]
 
+# MA Sample Data - 2005 Lactoscan (simple # prefix, two values)
+# Format: #Value1 Value2
+ma_2005_samples = [
+    "#13.10 05.30", "#04.10 08.70", "#07.20 09.10", "#05.80 08.20",
+    "#04.50 08.60", "#06.80 09.20", "#03.80 08.50", "#04.30 08.80",
+    "#07.50 09.30", "#05.20 08.40", "#03.90 08.60", "#06.50 09.00",
+    "#05.50 08.30", "#04.00 08.70", "#07.30 09.10", "#05.00 08.50",
+    "#04.20 08.80", "#06.90 09.20", "#05.30 08.40", "#04.40 08.90",
+    "#07.10 09.30", "#03.70 08.60", "#06.30 08.90", "#05.70 08.30",
+    "#04.60 08.70", "#06.70 09.10", "#04.80 08.50", "#07.40 09.30",
+    "#05.10 08.40", "#03.60 08.50", "#06.00 08.80", "#04.70 08.90",
+    "#05.60 08.30",
+]
+
 # MA Sample Data - 3001 Parentheses format
 ma_3001_samples = [
     "(063004401090154056300300019000400227M)",
@@ -558,6 +573,7 @@ MA_SAMPLES = {
     2002: ma_2002_samples,  # REIL Electronic - simple raw number
     2003: ma_2003_samples,  # Lactosure - pipe-separated raw
     2004: ma_2004_samples,  # Essae - # prefix with freezing point
+    2005: ma_2005_samples,  # Lactoscan - simple two values
     3001: ma_3001_samples,
     3002: ma_3001_samples,
     3003: ma_3003_samples,  # IndiZ - shorter parentheses format
@@ -638,6 +654,12 @@ def generate_ma_code_0000(model):
         fp = round(random.uniform(-0.68, -0.52), 3)
         weight = round(random.uniform(400.0, 750.0), 1)
         return _fmt_2004(round(fat, 2), snf, clr, protein, salts, lactose, density, 0.00, fp, 2, "23098128", weight)
+
+    # 2005 Lactoscan - simple two values
+    elif model == 2005:
+        v1 = round(random.uniform(3.5, 13.5), 2)
+        v2 = round(random.uniform(5.0, 9.5), 2)
+        return f"#{v1:05.2f} {v2:05.2f}"
 
     # 2003 Lactosure - pipe-separated raw
     elif model == 2003:
