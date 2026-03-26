@@ -27,7 +27,7 @@ MA_MODELS = {
     2004: "Ekomilk_Master_Pro (TIMEOUT)",
     3001: "Speedy_with_paren (PARENTHESES)",
     3002: "Standard_with_paren (PARENTHESES)",
-    3003: "Ultrasonic_with_paren (PARENTHESES)",
+    3003: "IndiZ (PARENTHESES)",
     3004: "Meko_with_paren (PARENTHESES)",
     4001: "Speedy_Newline (NEWLINE)",
     4002: "Standard_Newline (NEWLINE)",
@@ -459,6 +459,53 @@ ma_2003_samples = [
     _fmt_2003(4.20, "A", 1, 5.60, 8.30, 29.10, 3.02, 4.52, 0.66, 0.00, 27.80),
 ]
 
+# MA Sample Data - 3003 IndiZ (shorter parentheses format, no trailing letter)
+# Format: (FFFFSSSSCCCCxxxxxx000000000000) where F=fat*100, S=snf*100, C=clr*100
+def _fmt_3003(fat, snf, clr, extra1, extra2):
+    """Format 3003 output matching real IndiZ device"""
+    f_int = int(round(fat * 100))
+    s_int = int(round(snf * 100))
+    c_int = int(round(clr * 100))
+    e1_int = int(round(extra1 * 100))
+    e2_int = int(round(extra2 * 100))
+    return f"({f_int:04d}{s_int:04d}{c_int:04d}{e1_int:04d}{e2_int:04d}00000000)"
+
+ma_3003_samples = [
+    _fmt_3003(4.88, 7.62, 24.94, 19.13, 0.00),
+    _fmt_3003(4.10, 8.70, 26.20, 18.50, 0.00),
+    _fmt_3003(7.20, 9.10, 22.50, 21.30, 0.00),
+    _fmt_3003(5.80, 8.20, 25.80, 17.90, 0.00),
+    _fmt_3003(4.50, 8.60, 27.00, 19.50, 0.00),
+    _fmt_3003(6.80, 9.20, 23.10, 20.80, 0.00),
+    _fmt_3003(3.80, 8.50, 27.80, 16.50, 0.00),
+    _fmt_3003(4.30, 8.80, 26.50, 18.20, 0.00),
+    _fmt_3003(7.50, 9.30, 22.00, 22.00, 0.00),
+    _fmt_3003(5.20, 8.40, 26.00, 18.80, 0.00),
+    _fmt_3003(3.90, 8.60, 27.50, 17.10, 0.00),
+    _fmt_3003(6.50, 9.00, 23.50, 20.20, 0.00),
+    _fmt_3003(5.50, 8.30, 25.50, 18.00, 0.00),
+    _fmt_3003(4.00, 8.70, 27.20, 17.50, 0.00),
+    _fmt_3003(7.30, 9.10, 22.30, 21.50, 0.00),
+    _fmt_3003(5.00, 8.50, 26.30, 18.50, 0.00),
+    _fmt_3003(4.20, 8.80, 26.80, 18.30, 0.00),
+    _fmt_3003(6.90, 9.20, 22.80, 20.90, 0.00),
+    _fmt_3003(5.30, 8.40, 25.70, 18.60, 0.00),
+    _fmt_3003(4.40, 8.90, 26.40, 19.00, 0.00),
+    _fmt_3003(7.10, 9.30, 22.20, 21.80, 0.00),
+    _fmt_3003(3.70, 8.60, 28.00, 16.30, 0.00),
+    _fmt_3003(6.30, 8.90, 24.00, 19.80, 0.00),
+    _fmt_3003(5.70, 8.30, 25.30, 17.80, 0.00),
+    _fmt_3003(4.60, 8.70, 26.60, 19.20, 0.00),
+    _fmt_3003(6.70, 9.10, 23.30, 20.50, 0.00),
+    _fmt_3003(4.80, 8.50, 26.10, 18.40, 0.00),
+    _fmt_3003(7.40, 9.30, 21.80, 22.20, 0.00),
+    _fmt_3003(5.10, 8.40, 26.20, 18.70, 0.00),
+    _fmt_3003(3.60, 8.50, 28.20, 16.00, 0.00),
+    _fmt_3003(6.00, 8.80, 24.50, 19.50, 0.00),
+    _fmt_3003(4.70, 8.90, 26.30, 19.10, 0.00),
+    _fmt_3003(5.60, 8.30, 25.40, 17.70, 0.00),
+]
+
 # All MA samples by model
 MA_SAMPLES = {
     1001: ma_1001_samples,
@@ -471,7 +518,7 @@ MA_SAMPLES = {
     2004: ma_1001_samples,
     3001: ma_3001_samples,
     3002: ma_3001_samples,
-    3003: ma_3001_samples,
+    3003: ma_3003_samples,  # IndiZ - shorter parentheses format
     3004: ma_3001_samples,
     4001: ma_4001_samples,
     4002: ma_4001_samples,
@@ -568,7 +615,11 @@ def generate_ma_code_0000(model):
             f"Shift: {shift}    SSCounter: {counter}"
         )
 
-    # Parentheses format (models 3001-3004)
+    # 3003 IndiZ - shorter parentheses format
+    elif model == 3003:
+        return _fmt_3003(round(fat, 2), snf, clr, round(random.uniform(16.0, 22.0), 2), 0.00)
+
+    # Parentheses format (models 3001-3002, 3004)
     elif 3001 <= model <= 3004:
         # Format: (FFFSSSRRR...) - randomize values but code portion = 0000
         f_int = int(fat * 100)
