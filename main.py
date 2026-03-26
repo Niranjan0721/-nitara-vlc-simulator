@@ -527,54 +527,32 @@ class VLCSimulator(QMainWindow):
         self.append_log("[WM] Stopped")
 
     def start_ma_normal(self):
-        """Start MA transmission with normal data"""
-        model = self.ma_model_combo.currentData()
-        mode = get_ma_mode(model)
+        """Send MA data once (single-shot for all modes)"""
         self.last_ma_data = self.get_ma_sample(code_0000=False)
-        connected = "(Connected)" if self.ma_serial and self.ma_serial.is_open else "(No Port)"
+        self.ma_tx_count += 1
+        self.ma_tx_label.setText(f"TX Count: {self.ma_tx_count}")
 
-        if mode == MA_MODE_TIMEOUT:
-            # Single-shot for timeout mode
-            self.ma_tx_count += 1
-            self.ma_tx_label.setText(f"TX Count: {self.ma_tx_count}")
-
-            if self.ma_serial and self.ma_serial.is_open:
-                self._send_ma_serial_throttled(self.last_ma_data)
-                self.append_log(f"[MA TX#{self.ma_tx_count}] Single-shot:")
-            else:
-                self.append_log(f"[MA TX#{self.ma_tx_count}] Single-shot (No Port):")
-            self.append_log(f"{self.last_ma_data}")
-            self.append_log("")
+        if self.ma_serial and self.ma_serial.is_open:
+            self._send_ma_serial_throttled(self.last_ma_data)
+            self.append_log(f"[MA TX#{self.ma_tx_count}]")
         else:
-            # Continuous for PARENTHESES and NEWLINE modes
-            self.ma_continuous = True
-            self.ma_timer.start(100)  # Match Pico VLC timing
-            self.append_log(f"[MA] Started continuous ({mode}) {connected}")
+            self.append_log(f"[MA TX#{self.ma_tx_count}] (No Port)")
+        self.append_log(f"{self.last_ma_data}")
+        self.append_log("")
 
     def start_ma_0000(self):
-        """Start MA transmission with code 0000 data"""
-        model = self.ma_model_combo.currentData()
-        mode = get_ma_mode(model)
+        """Send MA code 0000 data once (single-shot for all modes)"""
         self.last_ma_data = self.get_ma_sample(code_0000=True)
-        connected = "(Connected)" if self.ma_serial and self.ma_serial.is_open else "(No Port)"
+        self.ma_tx_count += 1
+        self.ma_tx_label.setText(f"TX Count: {self.ma_tx_count}")
 
-        if mode == MA_MODE_TIMEOUT:
-            # Single-shot
-            self.ma_tx_count += 1
-            self.ma_tx_label.setText(f"TX Count: {self.ma_tx_count}")
-
-            if self.ma_serial and self.ma_serial.is_open:
-                self._send_ma_serial_throttled(self.last_ma_data)
-                self.append_log(f"[MA TX#{self.ma_tx_count}] Code 0000 single-shot:")
-            else:
-                self.append_log(f"[MA TX#{self.ma_tx_count}] Code 0000 single-shot (No Port):")
-            self.append_log(f"{self.last_ma_data}")
-            self.append_log("")
+        if self.ma_serial and self.ma_serial.is_open:
+            self._send_ma_serial_throttled(self.last_ma_data)
+            self.append_log(f"[MA TX#{self.ma_tx_count}] Code 0000:")
         else:
-            # Continuous
-            self.ma_continuous = True
-            self.ma_timer.start(100)  # Match Pico VLC timing
-            self.append_log(f"[MA] Started Code 0000 continuous ({mode}) {connected}")
+            self.append_log(f"[MA TX#{self.ma_tx_count}] Code 0000 (No Port):")
+        self.append_log(f"{self.last_ma_data}")
+        self.append_log("")
 
     def stop_ma(self):
         """Stop MA transmission"""
