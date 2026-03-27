@@ -26,8 +26,8 @@ MA_MODELS = {
     2003: "Lactosure (TIMEOUT)",
     2004: "Essae (TIMEOUT)",
     2005: "Lactoscan (TIMEOUT)",
-    3001: "Speedy_with_paren (PARENTHESES)",
-    3002: "Standard_with_paren (PARENTHESES)",
+    3001: "Akashganga (PARENTHESES)",
+    3002: "EcoMilk Ultra Pro (PARENTHESES)",
     3003: "IndiZ (PARENTHESES)",
     3004: "Meko_with_paren (PARENTHESES)",
     4001: "Speedy_Newline (NEWLINE)",
@@ -516,6 +516,44 @@ ma_2003_samples = [
     _fmt_2003(4.20, "A", 1, 5.60, 8.30, 29.10, 3.02, 4.52, 0.66, 0.00, 27.80),
 ]
 
+# MA Sample Data - 3002 EcoMilk Ultra Pro (shorter parentheses, no trailing letter)
+# Format: 28 digits inside parentheses, same length as 3003 but different field layout
+ma_3002_samples = [
+    "(0041017800008503000000008722)",
+    "(0380085026008120000000007850)",
+    "(0720091022509430000000009215)",
+    "(0580082025807900000000008105)",
+    "(0450086027008250000000008350)",
+    "(0680092023108800000000009010)",
+    "(0380085027808100000000007920)",
+    "(0430088026508350000000008250)",
+    "(0750093022009500000000009340)",
+    "(0520084026008450000000008180)",
+    "(0390086027508200000000007980)",
+    "(0650090023508700000000008870)",
+    "(0550083025508150000000008050)",
+    "(0400087027208300000000008120)",
+    "(0730091022309100000000009180)",
+    "(0500085026308400000000008250)",
+    "(0420088026808350000000008200)",
+    "(0690092022808850000000008950)",
+    "(0530084025708300000000008120)",
+    "(0440089026408500000000008320)",
+    "(0710093022209200000000009250)",
+    "(0370086028008050000000007880)",
+    "(0630089024008600000000008750)",
+    "(0570083025308050000000008000)",
+    "(0460087026608400000000008280)",
+    "(0670091023308550000000008900)",
+    "(0480085026108200000000008150)",
+    "(0740093021809350000000009300)",
+    "(0510084026208300000000008180)",
+    "(0360085028208000000000007850)",
+    "(0600088024508500000000008650)",
+    "(0470089026308350000000008250)",
+    "(0560083025408100000000008030)",
+]
+
 # MA Sample Data - 3003 IndiZ (shorter parentheses format, no trailing letter)
 # Format: (FFFFSSSSCCCCxxxxxx000000000000) where F=fat*100, S=snf*100, C=clr*100
 def _fmt_3003(fat, snf, clr, extra1, extra2):
@@ -575,7 +613,7 @@ MA_SAMPLES = {
     2004: ma_2004_samples,  # Essae - # prefix with freezing point
     2005: ma_2005_samples,  # Lactoscan - simple two values
     3001: ma_3001_samples,
-    3002: ma_3001_samples,
+    3002: ma_3002_samples,  # EcoMilk Ultra Pro - shorter parentheses
     3003: ma_3003_samples,  # IndiZ - shorter parentheses format
     3004: ma_3001_samples,
     4001: ma_4001_samples,
