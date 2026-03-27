@@ -31,7 +31,7 @@ MA_MODELS = {
     3003: "IndiZ (PARENTHESES)",
     3004: "iSmart (PARENTHESES)",
     4001: "Fatomatic (NEWLINE)",
-    4002: "Standard_Newline (NEWLINE)",
+    4002: "Indiz Milkofat (NEWLINE)",
     4003: "Ultrasonic_Newline (NEWLINE)",
     5001: "STIPL (TIMEOUT)"
 }
@@ -756,12 +756,10 @@ def generate_ma_code_0000(model):
         f_int = int(round(fat * 100))
         return f"%{f_int:04d}"
 
-    # Newline format (models 4002-4003)
-    elif 4002 <= model <= 4003:
-        fat1 = round(random.uniform(3.0, 5.0), 2)
-        snf1 = round(random.uniform(8.5, 9.5), 2)
-        clr1 = round(random.uniform(28.0, 33.0), 2)
-        return f"#{fat1:05.2f} {snf1:05.2f} {clr1:05.2f} {random.uniform(2.5, 4.0):05.2f} {random.uniform(4.0, 5.5):05.2f} {random.uniform(0.5, 0.8):05.2f} {random.uniform(29.0, 32.0):05.2f} {random.uniform(1.5, 2.5):05.2f} 00.00 0 0000 00.00 000.0"
+    # 4002 Indiz Milkofat - same % format as 4001
+    elif model == 4002:
+        f_int = int(round(fat * 100))
+        return f"%{f_int:04d}"
 
     # STIPL format (model 5001)
     elif model == 5001:
