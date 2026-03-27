@@ -178,13 +178,13 @@ def _fmt_1004(code, mtype, qty, fat, snf, rate, amt, date_str, time_str):
     """Format 1004 receipt matching real EKOmilk Ultra V1 output"""
     return (
         f"Provisional Acknowldgement Slip\n\n"
-        f"    Benny Impex Private Limited\n"
-        f"        New Delhi\n\n"
-        f"Date: {date_str}        Time: {time_str}\n"
-        f"Code:........\n"
-        f"Milk Type: {mtype}    Quantity:........\n"
-        f"FAT:      {fat:.1f}    SNF:    {snf:.1f}%\n"
-        f"Rate(Rs.):........Amount:........"
+        f"  Benny Impex Private Limited\n\n"
+        f"     New Delhi\n\n"
+        f"Date : {date_str}       Time: {time_str} \n"
+        f"Code : {code}\n"
+        f"Milk Type : {mtype} Quantity : {qty:.2f}\n"
+        f"FAT :    {fat:.1f}      SNF :    {snf:.1f} %\n"
+        f"Rate(Rs.) : {rate:.2f} Amount : {amt:.2f}\n"
     )
 
 ma_1004_samples = [
@@ -228,19 +228,19 @@ def _fmt_2001(sn, mode, temp, fat, snf, density, protein, lactose, salts, added_
     """Format 2001 output matching real Kurien UltraScan device"""
     return (
         f"Milk Analyzer\n"
-        f"SN: {sn}  Mode:    {mode}\n"
-        f"    Temp. {temp:.1f} C\n"
-        f"Fat.............. {fat:.1f}%\n"
-        f"SNF.............. {snf:.1f}%\n"
-        f"Density..........{density:.1f}\n"
-        f"Protein.......... {protein:.1f}%\n"
-        f"Lactose.......... {lactose:.1f}%\n"
-        f"Salts............ {salts:.1f}%\n"
-        f"Added water...... {added_water:.1f}%\n"
+        f"SN: {sn}  Mode:     {mode}\n"
+        f"Temp. {temp:.1f} C\n"
+        f"Fat............... {fat:.1f}%\n"
+        f"SNF............... {snf:.1f}%\n"
+        f"Density...........{density:.1f}\n"
+        f"Protein........... {protein:.1f}%\n"
+        f"Lactose........... {lactose:.1f}%\n"
+        f"Salts............. {salts:.1f}%\n"
+        f"Added water....... {added_water:.1f}%\n"
         f"Freezing point..{freezing_pt:+.3f} C\n"
-        f"pH............... {ph:.1f}\n"
-        f"Conductivity..... {conductivity:.1f}\n"
-        f"{time_str}    {date_str}"
+        f"pH................ {ph:.1f}\n"
+        f"Conductivity...... {conductivity:.1f}\n"
+        f"{time_str}   {date_str}"
     )
 
 ma_2001_samples = [
@@ -692,13 +692,13 @@ def generate_ma_code_0000(model):
         mt = random.choice(milk_types_receipt)
         return (
             f"Provisional Acknowldgement Slip\n\n"
-            f"    Benny Impex Private Limited\n"
-            f"        New Delhi\n\n"
-            f"Date: 05/12/23        Time: 07:01\n"
-            f"Code:........\n"
-            f"Milk Type: {mt}    Quantity:........\n"
-            f"FAT:      {round(fat, 1):.1f}    SNF:    {snf:.1f}%\n"
-            f"Rate(Rs.):........Amount:........"
+            f"  Benny Impex Private Limited\n\n"
+            f"     New Delhi\n\n"
+            f"Date : 05/12/23       Time: 07:01 \n"
+            f"Code : 0000\n"
+            f"Milk Type : {mt} Quantity : {qty:.2f}\n"
+            f"FAT :    {round(fat, 1):.1f}      SNF :    {snf:.1f} %\n"
+            f"Rate(Rs.) : {rate:.2f} Amount : {amt:.2f}\n"
         )
 
     # 2001 Kurien UltraScan - raw analyzer
@@ -712,19 +712,19 @@ def generate_ma_code_0000(model):
         density = round(random.uniform(29.0, 31.0), 1)
         return (
             f"Milk Analyzer\n"
-            f"SN: 38344  Mode:    2\n"
-            f"    Temp. {temp:.1f} C\n"
-            f"Fat.............. {round(fat, 1):.1f}%\n"
-            f"SNF.............. {snf:.1f}%\n"
-            f"Density..........{density:.1f}\n"
-            f"Protein.......... {protein:.1f}%\n"
-            f"Lactose.......... {lactose:.1f}%\n"
-            f"Salts............ 0.7%\n"
-            f"Added water...... 0.0%\n"
+            f"SN: 38344  Mode:     2\n"
+            f"Temp. {temp:.1f} C\n"
+            f"Fat............... {round(fat, 1):.1f}%\n"
+            f"SNF............... {snf:.1f}%\n"
+            f"Density...........{density:.1f}\n"
+            f"Protein........... {protein:.1f}%\n"
+            f"Lactose........... {lactose:.1f}%\n"
+            f"Salts............. 0.7%\n"
+            f"Added water....... 0.0%\n"
             f"Freezing point..{fp:+.3f} C\n"
-            f"pH............... {ph:.1f}\n"
-            f"Conductivity..... {cond:.1f}\n"
-            f"07:01    05/12/23"
+            f"pH................ {ph:.1f}\n"
+            f"Conductivity...... {cond:.1f}\n"
+            f"07:01   05/12/23"
         )
 
     # 2002 REIL Electronic - simple raw number
