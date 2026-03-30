@@ -635,7 +635,12 @@ class VLCSimulator(QMainWindow):
         """Send MA data byte-by-byte to match real milk analyzer behavior."""
         def _send():
             try:
-                send_data = data.encode()
+                # Add \n for newline mode models (4001-4003) as connector expects it
+                model = self.ma_model_combo.currentData()
+                if 4001 <= model <= 4003:
+                    send_data = (data + "\n").encode()
+                else:
+                    send_data = data.encode()
                 # Send byte-by-byte like real MA device
                 for byte in send_data:
                     if not (self.ma_serial and self.ma_serial.is_open):
