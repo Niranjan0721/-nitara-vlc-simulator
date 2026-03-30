@@ -35,3 +35,4 @@ jobs:
         with:
           name: NC_Simulator-Mac-DMG
           path: NC_Simulator.dmg
+          retention-days: 3
