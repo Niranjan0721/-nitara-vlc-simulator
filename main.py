@@ -527,32 +527,57 @@ class VLCSimulator(QMainWindow):
         self.append_log("[WM] Stopped")
 
     def start_ma_normal(self):
-        """Send MA data once (single-shot for all modes)"""
+        """Send MA data - single-shot for non-continuous models (1001-2005, 5001),
+        continuous for parentheses/newline models (3001-4003)."""
+        model = self.ma_model_combo.currentData()
         self.last_ma_data = self.get_ma_sample(code_0000=False)
-        self.ma_tx_count += 1
-        self.ma_tx_label.setText(f"TX Count: {self.ma_tx_count}")
+        connected = "(Connected)" if self.ma_serial and self.ma_serial.is_open else "(No Port)"
 
-        if self.ma_serial and self.ma_serial.is_open:
-            self._send_ma_serial_throttled(self.last_ma_data)
-            self.append_log(f"[MA TX#{self.ma_tx_count}]")
+        if 3001 <= model <= 4003:
+            # Continuous mode - keep sending until Stop
+            self.ma_continuous = True
+            self.ma_timer.start(100)
+            self.append_log(f"[MA] Started continuous {connected}")
+            self.append_log(f"{self.last_ma_data}")
+            self.append_log("")
         else:
-            self.append_log(f"[MA TX#{self.ma_tx_count}] (No Port)")
-        self.append_log(f"{self.last_ma_data}")
-        self.append_log("")
+            # Single-shot for timeout models
+            self.ma_tx_count += 1
+            self.ma_tx_label.setText(f"TX Count: {self.ma_tx_count}")
+
+            if self.ma_serial and self.ma_serial.is_open:
+                self._send_ma_serial_throttled(self.last_ma_data)
+                self.append_log(f"[MA TX#{self.ma_tx_count}]")
+            else:
+                self.append_log(f"[MA TX#{self.ma_tx_count}] (No Port)")
+            self.append_log(f"{self.last_ma_data}")
+            self.append_log("")
 
     def start_ma_0000(self):
-        """Send MA code 0000 data once (single-shot for all modes)"""
+        """Send MA code 0000 data - single-shot for non-continuous, continuous for 3001-4003."""
+        model = self.ma_model_combo.currentData()
         self.last_ma_data = self.get_ma_sample(code_0000=True)
-        self.ma_tx_count += 1
-        self.ma_tx_label.setText(f"TX Count: {self.ma_tx_count}")
+        connected = "(Connected)" if self.ma_serial and self.ma_serial.is_open else "(No Port)"
 
-        if self.ma_serial and self.ma_serial.is_open:
-            self._send_ma_serial_throttled(self.last_ma_data)
-            self.append_log(f"[MA TX#{self.ma_tx_count}] Code 0000:")
+        if 3001 <= model <= 4003:
+            # Continuous mode
+            self.ma_continuous = True
+            self.ma_timer.start(100)
+            self.append_log(f"[MA] Started Code 0000 continuous {connected}")
+            self.append_log(f"{self.last_ma_data}")
+            self.append_log("")
         else:
-            self.append_log(f"[MA TX#{self.ma_tx_count}] Code 0000 (No Port):")
-        self.append_log(f"{self.last_ma_data}")
-        self.append_log("")
+            # Single-shot
+            self.ma_tx_count += 1
+            self.ma_tx_label.setText(f"TX Count: {self.ma_tx_count}")
+
+            if self.ma_serial and self.ma_serial.is_open:
+                self._send_ma_serial_throttled(self.last_ma_data)
+                self.append_log(f"[MA TX#{self.ma_tx_count}] Code 0000:")
+            else:
+                self.append_log(f"[MA TX#{self.ma_tx_count}] Code 0000 (No Port):")
+            self.append_log(f"{self.last_ma_data}")
+            self.append_log("")
 
     def stop_ma(self):
         """Stop MA transmission"""
