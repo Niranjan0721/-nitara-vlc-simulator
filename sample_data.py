@@ -35,6 +35,7 @@ MA_MODELS = {
     4001: "Fatomatic (NEWLINE)",
     4002: "Indiz Milkofat (NEWLINE)",
     4003: "Solar Powered (NEWLINE)",
+    4500: "Expert Pro Plus With DPS (NEWLINE, Single)",
     5001: "STIPL (TIMEOUT)"
 }
 
@@ -49,7 +50,7 @@ def get_ma_mode(model):
         return MA_MODE_TIMEOUT
     elif 3001 <= model <= 3004:
         return MA_MODE_PARENTHESES
-    elif 4001 <= model <= 4003:
+    elif 4001 <= model <= 4999:
         return MA_MODE_NEWLINE
     elif 5001 <= model <= 5001:
         return MA_MODE_TIMEOUT
@@ -547,6 +548,49 @@ ma_4003_samples = [
     "#03.68 08.63 29.45 02.93 04.50 00.62 29.75 01.81 00.00 0 0032 00.00 000.0",
 ]
 
+# MA Sample Data - 4005 Expert Pro Plus With DPS (single line, NEWLINE mode, non-continuous)
+# Format: A + CODE(4) + QTY(5) + FAT(5) + SNF(5) + RATE(5) + AMT(7)
+# Example: A000555.5503.2008.5031.511750.38
+def _fmt_4500(code, qty, fat, snf, rate, amt):
+    """Format 4005 single-line output matching real Expert Pro Plus With DPS device"""
+    return f"A{code:04d}{qty:05.2f}{fat:05.2f}{snf:05.2f}{rate:05.2f}{amt:07.2f}"
+
+ma_4500_samples = [
+    _fmt_4500(5, 55.55, 3.20, 8.50, 31.51, 1750.38),
+    _fmt_4500(6, 60.00, 4.10, 8.70, 45.10, 2706.00),
+    _fmt_4500(7, 50.50, 7.20, 9.10, 50.25, 2537.63),
+    _fmt_4500(8, 75.00, 5.80, 8.20, 46.75, 3506.25),
+    _fmt_4500(9, 48.75, 4.50, 8.60, 44.90, 2188.88),
+    _fmt_4500(10, 57.50, 6.80, 9.20, 51.75, 2975.62),
+    _fmt_4500(11, 42.50, 3.80, 8.50, 43.60, 1853.00),
+    _fmt_4500(12, 26.25, 4.30, 8.80, 44.50, 1168.13),
+    _fmt_4500(13, 70.00, 7.50, 9.30, 52.00, 3640.00),
+    _fmt_4500(14, 33.75, 5.20, 8.40, 46.00, 1552.50),
+    _fmt_4500(15, 55.00, 3.90, 8.60, 43.80, 2409.00),
+    _fmt_4500(16, 66.25, 6.50, 9.00, 50.50, 3345.62),
+    _fmt_4500(17, 35.00, 5.50, 8.30, 47.00, 1645.00),
+    _fmt_4500(18, 43.75, 4.00, 8.70, 44.20, 1933.75),
+    _fmt_4500(19, 82.50, 7.00, 9.10, 51.25, 4228.13),
+    _fmt_4500(20, 22.50, 5.00, 8.50, 45.50, 1023.75),
+    _fmt_4500(21, 45.00, 4.20, 8.80, 44.75, 2013.75),
+    _fmt_4500(22, 60.00, 6.90, 9.20, 51.00, 3060.00),
+    _fmt_4500(23, 36.25, 5.30, 8.40, 46.25, 1676.56),
+    _fmt_4500(24, 52.50, 4.40, 8.90, 45.00, 2362.50),
+    _fmt_4500(25, 68.75, 7.30, 9.00, 50.75, 3489.06),
+    _fmt_4500(26, 30.00, 5.70, 8.30, 47.50, 1425.00),
+    _fmt_4500(27, 41.25, 3.70, 8.60, 43.40, 1790.25),
+    _fmt_4500(28, 72.50, 6.60, 9.10, 50.00, 3625.00),
+    _fmt_4500(29, 28.75, 5.10, 8.50, 45.75, 1315.31),
+    _fmt_4500(30, 47.50, 4.60, 8.70, 45.25, 2149.38),
+    _fmt_4500(31, 58.75, 7.10, 9.30, 52.25, 3069.69),
+    _fmt_4500(32, 37.50, 5.40, 8.40, 46.50, 1743.75),
+    _fmt_4500(33, 50.00, 4.00, 8.80, 44.00, 2200.00),
+    _fmt_4500(34, 76.25, 6.70, 9.20, 51.50, 3926.88),
+    _fmt_4500(35, 32.50, 5.60, 8.30, 47.25, 1535.63),
+    _fmt_4500(36, 46.25, 4.30, 8.90, 44.60, 2062.75),
+    _fmt_4500(37, 65.00, 7.40, 9.00, 50.50, 3282.50),
+]
+
 # MA Sample Data - 5001 STIPL (receipt format matching real STIPL device)
 def _fmt_stipl(code1, code2, mtype, name, qty, fat, snf, rate, shift, time_str):
     """Format STIPL receipt matching real milk analyzer output"""
@@ -759,6 +803,7 @@ MA_SAMPLES = {
     4001: ma_4001_samples,
     4002: ma_4001_samples,
     4003: ma_4003_samples,  # Solar Powered - # space-separated
+    4500: ma_4500_samples,  # Expert Pro Plus With DPS - single line NEWLINE
     5001: ma_5001_samples
 }
 

@@ -527,13 +527,13 @@ class VLCSimulator(QMainWindow):
         self.append_log("[WM] Stopped")
 
     def start_ma_normal(self):
-        """Send MA data - single-shot for non-continuous models (1001-2005, 5001),
-        continuous for parentheses/newline models (3001-4003)."""
+        """Send MA data - single-shot for non-continuous models (1001-2999, 4500-4999, 5001),
+        continuous for parentheses (3001-3999) and newline-continuous (4001-4499) models."""
         model = self.ma_model_combo.currentData()
         self.last_ma_data = self.get_ma_sample(code_0000=False)
         connected = "(Connected)" if self.ma_serial and self.ma_serial.is_open else "(No Port)"
 
-        if 3001 <= model <= 4003:
+        if (3001 <= model <= 3999) or (4001 <= model <= 4499):
             # Continuous mode - keep sending until Stop
             self.ma_continuous = True
             self.ma_timer.start(100)
@@ -554,12 +554,12 @@ class VLCSimulator(QMainWindow):
             self.append_log("")
 
     def start_ma_0000(self):
-        """Send MA code 0000 data - single-shot for non-continuous, continuous for 3001-4003."""
+        """Send MA code 0000 data - single-shot for non-continuous, continuous for 3001-3999 and 4001-4499."""
         model = self.ma_model_combo.currentData()
         self.last_ma_data = self.get_ma_sample(code_0000=True)
         connected = "(Connected)" if self.ma_serial and self.ma_serial.is_open else "(No Port)"
 
-        if 3001 <= model <= 4003:
+        if (3001 <= model <= 3999) or (4001 <= model <= 4499):
             # Continuous mode
             self.ma_continuous = True
             self.ma_timer.start(100)
@@ -660,9 +660,9 @@ class VLCSimulator(QMainWindow):
         """Send MA data byte-by-byte to match real milk analyzer behavior."""
         def _send():
             try:
-                # Add \n for newline mode models (4001-4003) as connector expects it
+                # Add \n for all NEWLINE mode models (4001-4999) as connector expects it
                 model = self.ma_model_combo.currentData()
-                if 4001 <= model <= 4003:
+                if 4001 <= model <= 4999:
                     send_data = (data + "\n").encode()
                 else:
                     send_data = data.encode()
