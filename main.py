@@ -21,7 +21,7 @@ import serial.tools.list_ports
 
 from sample_data import (
     WM_MODELS, MA_MODELS, WM_SAMPLES, MA_SAMPLES,
-    WM_CODE_0000, BAUD_RATES, get_ma_mode,
+    WM_CODE_0000, BAUD_RATES, get_ma_mode, is_ma_continuous,
     MA_MODE_TIMEOUT, MA_MODE_PARENTHESES, MA_MODE_NEWLINE,
     generate_ma_code_0000
 )
@@ -527,13 +527,13 @@ class VLCSimulator(QMainWindow):
         self.append_log("[WM] Stopped")
 
     def start_ma_normal(self):
-        """Send MA data - single-shot for non-continuous models (1001-2999, 4500-4999, 5001),
-        continuous for parentheses (3001-3999) and newline-continuous (4001-4499) models."""
+        """Send MA data - loops for continuous devices (3xxx/4xxx except single models),
+        single-shot for TIMEOUT models and listed single devices (e.g. 4750)."""
         model = self.ma_model_combo.currentData()
         self.last_ma_data = self.get_ma_sample(code_0000=False)
         connected = "(Connected)" if self.ma_serial and self.ma_serial.is_open else "(No Port)"
 
-        if (3001 <= model <= 3999) or (4001 <= model <= 4499):
+        if is_ma_continuous(model):
             # Continuous mode - keep sending until Stop
             self.ma_continuous = True
             self.ma_timer.start(100)
@@ -554,12 +554,12 @@ class VLCSimulator(QMainWindow):
             self.append_log("")
 
     def start_ma_0000(self):
-        """Send MA code 0000 data - single-shot for non-continuous, continuous for 3001-3999 and 4001-4499."""
+        """Send MA code 0000 data - loops for continuous devices, single-shot otherwise."""
         model = self.ma_model_combo.currentData()
         self.last_ma_data = self.get_ma_sample(code_0000=True)
         connected = "(Connected)" if self.ma_serial and self.ma_serial.is_open else "(No Port)"
 
-        if (3001 <= model <= 3999) or (4001 <= model <= 4499):
+        if is_ma_continuous(model):
             # Continuous mode
             self.ma_continuous = True
             self.ma_timer.start(100)

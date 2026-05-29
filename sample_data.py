@@ -35,7 +35,7 @@ MA_MODELS = {
     4001: "Fatomatic (NEWLINE)",
     4002: "Indiz Milkofat (NEWLINE)",
     4003: "Solar Powered (NEWLINE)",
-    4500: "Expert Pro Plus With DPS (NEWLINE, Single)",
+    4750: "Expert Pro Plus With DPS (NEWLINE, Single)",
     5001: "STIPL (TIMEOUT)"
 }
 
@@ -45,16 +45,27 @@ MA_MODE_PARENTHESES = "PARENTHESES"
 MA_MODE_NEWLINE = "NEWLINE"
 
 def get_ma_mode(model):
-    """Get MA detection mode based on model number"""
-    if 1001 <= model <= 2006:
-        return MA_MODE_TIMEOUT
-    elif 3001 <= model <= 3004:
+    """Get MA detection mode based on model number range."""
+    if 3000 <= model <= 3999:
         return MA_MODE_PARENTHESES
-    elif 4001 <= model <= 4999:
+    elif 4000 <= model <= 4999:
         return MA_MODE_NEWLINE
-    elif 5001 <= model <= 5001:
+    else:  # 1000-2999, 5000+
         return MA_MODE_TIMEOUT
-    return MA_MODE_TIMEOUT
+
+def is_ma_continuous(model):
+    """True if simulator should loop (continuous device), False for single-shot.
+    Split at the 750 mark within each series:
+      3000-3749 (PARENTHESES) -> continuous (loop)
+      3750-3999 (PARENTHESES) -> single
+      4000-4749 (NEWLINE)     -> continuous (loop)
+      4750-4999 (NEWLINE)     -> single
+      everything else (TIMEOUT 1xxx/2xxx, 5xxx) -> single"""
+    if 3000 <= model <= 3749:
+        return True
+    if 4000 <= model <= 4749:
+        return True
+    return False
 
 # WM Sample Data - Type 1 Kg
 wm_type_1_kg = [
@@ -548,47 +559,47 @@ ma_4003_samples = [
     "#03.68 08.63 29.45 02.93 04.50 00.62 29.75 01.81 00.00 0 0032 00.00 000.0",
 ]
 
-# MA Sample Data - 4005 Expert Pro Plus With DPS (single line, NEWLINE mode, non-continuous)
+# MA Sample Data - 4750 Expert Pro Plus With DPS (single line, NEWLINE mode, non-continuous)
 # Format: A + CODE(4) + QTY(5) + FAT(5) + SNF(5) + RATE(5) + AMT(7)
 # Example: A000555.5503.2008.5031.511750.38
-def _fmt_4500(code, qty, fat, snf, rate, amt):
-    """Format 4005 single-line output matching real Expert Pro Plus With DPS device"""
+def _fmt_4750(code, qty, fat, snf, rate, amt):
+    """Format 4750 single-line output matching real Expert Pro Plus With DPS device"""
     return f"A{code:04d}{qty:05.2f}{fat:05.2f}{snf:05.2f}{rate:05.2f}{amt:07.2f}"
 
-ma_4500_samples = [
-    _fmt_4500(5, 55.55, 3.20, 8.50, 31.51, 1750.38),
-    _fmt_4500(6, 60.00, 4.10, 8.70, 45.10, 2706.00),
-    _fmt_4500(7, 50.50, 7.20, 9.10, 50.25, 2537.63),
-    _fmt_4500(8, 75.00, 5.80, 8.20, 46.75, 3506.25),
-    _fmt_4500(9, 48.75, 4.50, 8.60, 44.90, 2188.88),
-    _fmt_4500(10, 57.50, 6.80, 9.20, 51.75, 2975.62),
-    _fmt_4500(11, 42.50, 3.80, 8.50, 43.60, 1853.00),
-    _fmt_4500(12, 26.25, 4.30, 8.80, 44.50, 1168.13),
-    _fmt_4500(13, 70.00, 7.50, 9.30, 52.00, 3640.00),
-    _fmt_4500(14, 33.75, 5.20, 8.40, 46.00, 1552.50),
-    _fmt_4500(15, 55.00, 3.90, 8.60, 43.80, 2409.00),
-    _fmt_4500(16, 66.25, 6.50, 9.00, 50.50, 3345.62),
-    _fmt_4500(17, 35.00, 5.50, 8.30, 47.00, 1645.00),
-    _fmt_4500(18, 43.75, 4.00, 8.70, 44.20, 1933.75),
-    _fmt_4500(19, 82.50, 7.00, 9.10, 51.25, 4228.13),
-    _fmt_4500(20, 22.50, 5.00, 8.50, 45.50, 1023.75),
-    _fmt_4500(21, 45.00, 4.20, 8.80, 44.75, 2013.75),
-    _fmt_4500(22, 60.00, 6.90, 9.20, 51.00, 3060.00),
-    _fmt_4500(23, 36.25, 5.30, 8.40, 46.25, 1676.56),
-    _fmt_4500(24, 52.50, 4.40, 8.90, 45.00, 2362.50),
-    _fmt_4500(25, 68.75, 7.30, 9.00, 50.75, 3489.06),
-    _fmt_4500(26, 30.00, 5.70, 8.30, 47.50, 1425.00),
-    _fmt_4500(27, 41.25, 3.70, 8.60, 43.40, 1790.25),
-    _fmt_4500(28, 72.50, 6.60, 9.10, 50.00, 3625.00),
-    _fmt_4500(29, 28.75, 5.10, 8.50, 45.75, 1315.31),
-    _fmt_4500(30, 47.50, 4.60, 8.70, 45.25, 2149.38),
-    _fmt_4500(31, 58.75, 7.10, 9.30, 52.25, 3069.69),
-    _fmt_4500(32, 37.50, 5.40, 8.40, 46.50, 1743.75),
-    _fmt_4500(33, 50.00, 4.00, 8.80, 44.00, 2200.00),
-    _fmt_4500(34, 76.25, 6.70, 9.20, 51.50, 3926.88),
-    _fmt_4500(35, 32.50, 5.60, 8.30, 47.25, 1535.63),
-    _fmt_4500(36, 46.25, 4.30, 8.90, 44.60, 2062.75),
-    _fmt_4500(37, 65.00, 7.40, 9.00, 50.50, 3282.50),
+ma_4750_samples = [
+    _fmt_4750(5, 55.55, 3.20, 8.50, 31.51, 1750.38),
+    _fmt_4750(6, 60.00, 4.10, 8.70, 45.10, 2706.00),
+    _fmt_4750(7, 50.50, 7.20, 9.10, 50.25, 2537.63),
+    _fmt_4750(8, 75.00, 5.80, 8.20, 46.75, 3506.25),
+    _fmt_4750(9, 48.75, 4.50, 8.60, 44.90, 2188.88),
+    _fmt_4750(10, 57.50, 6.80, 9.20, 51.75, 2975.62),
+    _fmt_4750(11, 42.50, 3.80, 8.50, 43.60, 1853.00),
+    _fmt_4750(12, 26.25, 4.30, 8.80, 44.50, 1168.13),
+    _fmt_4750(13, 70.00, 7.50, 9.30, 52.00, 3640.00),
+    _fmt_4750(14, 33.75, 5.20, 8.40, 46.00, 1552.50),
+    _fmt_4750(15, 55.00, 3.90, 8.60, 43.80, 2409.00),
+    _fmt_4750(16, 66.25, 6.50, 9.00, 50.50, 3345.62),
+    _fmt_4750(17, 35.00, 5.50, 8.30, 47.00, 1645.00),
+    _fmt_4750(18, 43.75, 4.00, 8.70, 44.20, 1933.75),
+    _fmt_4750(19, 82.50, 7.00, 9.10, 51.25, 4228.13),
+    _fmt_4750(20, 22.50, 5.00, 8.50, 45.50, 1023.75),
+    _fmt_4750(21, 45.00, 4.20, 8.80, 44.75, 2013.75),
+    _fmt_4750(22, 60.00, 6.90, 9.20, 51.00, 3060.00),
+    _fmt_4750(23, 36.25, 5.30, 8.40, 46.25, 1676.56),
+    _fmt_4750(24, 52.50, 4.40, 8.90, 45.00, 2362.50),
+    _fmt_4750(25, 68.75, 7.30, 9.00, 50.75, 3489.06),
+    _fmt_4750(26, 30.00, 5.70, 8.30, 47.50, 1425.00),
+    _fmt_4750(27, 41.25, 3.70, 8.60, 43.40, 1790.25),
+    _fmt_4750(28, 72.50, 6.60, 9.10, 50.00, 3625.00),
+    _fmt_4750(29, 28.75, 5.10, 8.50, 45.75, 1315.31),
+    _fmt_4750(30, 47.50, 4.60, 8.70, 45.25, 2149.38),
+    _fmt_4750(31, 58.75, 7.10, 9.30, 52.25, 3069.69),
+    _fmt_4750(32, 37.50, 5.40, 8.40, 46.50, 1743.75),
+    _fmt_4750(33, 50.00, 4.00, 8.80, 44.00, 2200.00),
+    _fmt_4750(34, 76.25, 6.70, 9.20, 51.50, 3926.88),
+    _fmt_4750(35, 32.50, 5.60, 8.30, 47.25, 1535.63),
+    _fmt_4750(36, 46.25, 4.30, 8.90, 44.60, 2062.75),
+    _fmt_4750(37, 65.00, 7.40, 9.00, 50.50, 3282.50),
 ]
 
 # MA Sample Data - 5001 STIPL (receipt format matching real STIPL device)
@@ -803,7 +814,7 @@ MA_SAMPLES = {
     4001: ma_4001_samples,
     4002: ma_4001_samples,
     4003: ma_4003_samples,  # Solar Powered - # space-separated
-    4500: ma_4500_samples,  # Expert Pro Plus With DPS - single line NEWLINE
+    4750: ma_4750_samples,  # Expert Pro Plus With DPS - single line NEWLINE
     5001: ma_5001_samples
 }
 
@@ -925,6 +936,13 @@ def generate_ma_code_0000(model):
     elif model == 3003:
         return _fmt_3003(round(fat, 2), snf, clr, round(random.uniform(16.0, 22.0), 2), 0.00)
 
+    # 3005 ESSAE Plus - 29 digit parentheses (code 0000)
+    elif model == 3005:
+        f_int = int(round(fat * 100))
+        s_int = int(round(snf * 100))
+        c_int = int(round(clr * 100))
+        return f"({f_int:04d}{s_int:04d}{c_int:04d}00000{0:04d}00000000)"
+
     # Parentheses format (models 3001-3002, 3004)
     elif 3001 <= model <= 3004:
         # Format: (FFFSSSRRR...) - randomize values but code portion = 0000
@@ -951,6 +969,10 @@ def generate_ma_code_0000(model):
         snf1 = round(random.uniform(8.5, 9.5), 2)
         clr1 = round(random.uniform(28.0, 33.0), 2)
         return f"#{fat1:05.2f} {snf1:05.2f} {clr1:05.2f} {random.uniform(2.5, 4.0):05.2f} {random.uniform(4.0, 5.5):05.2f} {random.uniform(0.5, 0.8):05.2f} {random.uniform(29.0, 32.0):05.2f} {random.uniform(1.5, 2.5):05.2f} 00.00 0 0000 00.00 000.0"
+
+    # 4750 Expert Pro Plus With DPS - A-format single line (code 0000)
+    elif model == 4750:
+        return _fmt_4750(0, qty, round(fat, 2), snf, rate, amt)
 
     # STIPL format (model 5001)
     elif model == 5001:
